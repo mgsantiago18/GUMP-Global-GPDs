@@ -355,3 +355,47 @@ def Moment_Evo(j: complex, nf: int, p: int, Q: float, ConfFlav: np.array) -> np.
     EvoConfFlav = np.einsum('...ij, ...j->...i', inv_flav_trans, EvoConf) #(N, 5)
 
     return EvoConfFlav
+
+def Moment_Evo_T(j: complex, nf: int, p: int, Q: float, ConfFlav: np.array) -> np.array:
+    """
+    Evolution of moments in the flavor space 
+
+    Args:
+        uneolved conformal moments in flavor space ConfFlav = [ConfMoment_uV, ConfMoment_ubar, ConfMoment_dV, ConfMoment_dbar, ConfMoment_g] 
+        j: conformal spin j (conformal spin is actually j+2 but anyway): scalar
+        t: momentum transfer squared
+        nf: number of effective fermions; 
+        p (int): 1 for vector-like GPD (Ht, Et), -1 for axial-vector-like GPDs (Ht, Et): array (N,)
+        Q: final evolution scale: array(N,)
+
+    Returns:
+        Evolved conformal moments in flavor space (non-singlet, singlet, gluon)
+
+        return shape (N, 5)
+    """
+
+    # flavor_trans (5, 5) ConfFlav (N, 5)
+
+    # Transform the unevolved moments to evolution basis
+    # ConfEvoBasis = np.einsum('...j,j', flav_trans, ConfFlav) # originally, output will be (5), I want it to be (N, 5)
+    ConfEvoBasis = np.einsum('ij, ...j->...i', flav_trans, ConfFlav) # shape (N, 5)
+
+
+    # Taking the non-singlet and singlet parts of the conformal moments
+    ConfNS = 3 * ConfEvoBasis[..., :3] # (N, 3)
+    ConfS = [3 * ConfEvoBasis[..., -2] / nf, 3 * 2 * ConfEvoBasis[..., -1] / (j + 3)] # (N, 2)
+
+    # Calling evolution mulitiplier
+    [evons, evoa] = evolop(j, nf, p, Q) # (N) and (N, 2, 2)
+
+    # non-singlet part evolves multiplicatively
+    EvoConfNS = evons[..., np.newaxis] * ConfNS # (N, 3)
+    # singlet part mixes with the gluon
+    EvoConfS = np.einsum('...ij, ...j->...i', evoa, ConfS) # (N, 2)
+
+    # Recombing the non-singlet and singlet parts
+    EvoConf = np.concatenate((EvoConfNS, EvoConfS), axis=-1) # (N, 5)
+    # Inverse transform the evolved moments back to the flavor basis
+    EvoConfFlav_T = np.einsum('...ij, ...j->...i', inv_flav_trans, EvoConf) #(N, 5)
+
+    return EvoConfFlav_T

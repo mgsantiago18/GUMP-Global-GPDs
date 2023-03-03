@@ -1,6 +1,7 @@
 from Parameters import ParaManager_Unp, ParaManager_Pol
 from Observables import GPDobserv
 from DVCS_xsec import dsigma_TOT, dsigma_DVCS_HERA, M
+import DVMP_xsec as dvmp
 from multiprocessing import Pool
 from functools import partial
 from iminuit import Minuit
@@ -48,6 +49,81 @@ xBtQlst = DVCSxsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first
 DVCSxsec_group_data = list(map(lambda set: DVCSxsec_data[(DVCSxsec_data['xB'] == set[0]) & (DVCSxsec_data['t'] == set[1]) & ((DVCSxsec_data['Q'] == set[2]))], xBtQlst))
 
 DVCS_HERA_data = pd.read_csv('GUMPDATA/DVCSxsec_HERA.csv', header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f', 'pol'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float, 'pol': str})
+
+
+
+
+# rho and phi data from HERA, R = sigma_L / sigma_T is currently handled on the theory side for these
+
+DVrhoPZEUSxsec_data = pd.read_csv('GUMPDATA/DVMP_HERA/DVrhoPZEUSdt.csv', header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
+DVrhoPZEUSxsec_data['Q'] = np.sqrt(DVrhoPZEUSxsec_data['Q'])
+DVrhoPZEUSxsec_data['t'] = -1 * DVrhoPZEUSxsec_data['t']
+DVrhoPZEUSxsec_data = DVrhoPZEUSxsec_data[(DVrhoPZEUSxsec_data['Q']>Q_threshold)]
+xBtQlst_rhoZ = DVrhoPZEUSxsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
+DVrhoPZEUSxsec_group_data = list(map(lambda set: DVrhoPZEUSxsec_data[(DVrhoPZEUSxsec_data['xB'] == set[0]) & (DVrhoPZEUSxsec_data['t'] == set[1]) & ((DVrhoPZEUSxsec_data['Q'] == set[2]))], xBtQlst_rhoZ))
+
+DVrhoPH1xsec_data = pd.read_csv('GUMPDATA/DVMP_HERA/DVrhoPH1dt.csv', header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
+DVrhoPH1xsec_data['Q'] = np.sqrt(DVrhoPH1xsec_data['Q'])
+DVrhoPH1xsec_data['t'] = -1 * DVrhoPH1xsec_data['t']
+DVrhoPH1xsec_data = DVrhoPH1xsec_data[(DVrhoPH1xsec_data['Q']>Q_threshold)]
+xBtQlst_rhoH = DVrhoPH1xsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
+DVrhoPH1xsec_group_data = list(map(lambda set: DVrhoPH1xsec_data[(DVrhoPH1xsec_data['xB'] == set[0]) & (DVrhoPH1xsec_data['t'] == set[1]) & ((DVrhoPH1xsec_data['Q'] == set[2]))], xBtQlst_rhoH))
+
+DVphiPZEUSxsec_data = pd.read_csv('GUMPDATA/DVMP_HERA/DVphiPZEUSdt.csv', header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
+DVphiPZEUSxsec_data['Q'] = np.sqrt(DVphiPZEUSxsec_data['Q'])
+DVphiPZEUSxsec_data['t'] = -1 * DVphiPZEUSxsec_data['t']
+DVphiPZEUSxsec_data = DVphiPZEUSxsec_data[(DVphiPZEUSxsec_data['Q']>Q_threshold)]
+xBtQlst_phiZ = DVphiPZEUSxsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
+DVphiPZEUSxsec_group_data = list(map(lambda set: DVphiPZEUSxsec_data[(DVphiPZEUSxsec_data['xB'] == set[0]) & (DVphiPZEUSxsec_data['t'] == set[1]) & ((DVphiPZEUSxsec_data['Q'] == set[2]))], xBtQlst_phiZ))
+
+DVphiPH1xsec_data = pd.read_csv('GUMPDATA/DVMP_HERA/DVphiPH1dt.csv', header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
+DVphiPH1xsec_data['Q'] = np.sqrt(DVphiPH1xsec_data['Q'])
+DVphiPH1xsec_data['t'] = -1 * DVphiPH1xsec_data['t']
+DVphiPH1xsec_data = DVphiPH1xsec_data[(DVphiPH1xsec_data['Q']>Q_threshold)]
+xBtQlst_phiH = DVphiPH1xsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
+DVphiPH1xsec_group_data = list(map(lambda set: DVphiPH1xsec_data[(DVphiPH1xsec_data['xB'] == set[0]) & (DVphiPH1xsec_data['t'] == set[1]) & ((DVphiPH1xsec_data['Q'] == set[2]))], xBtQlst_phiH))
+
+
+# Jpsi data from HERA as well as R = sigma_L / sigma_T values hardcoded and used to convert data xsec simga_tot to sigma_L
+
+DVJpsiPH1xsec_data = pd.read_csv('GUMPDATA/DVMP_HERA/DVJpsiPH1dt.csv', header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
+DVJpsiPH1xsec_data['Q'] = np.sqrt(DVJpsiPH1xsec_data['Q'])
+DVJpsiPH1xsec_data['t'] = -1 * DVJpsiPH1xsec_data['t']
+DVJpsiPH1xsec_data = DVJpsiPH1xsec_data[(DVJpsiPH1xsec_data['Q']>Q_threshold)]
+xBtQlst_JpsiH = DVJpsiPH1xsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
+DVJpsiPH1xsec_L_data = DVJpsiPH1xsec_data.copy()
+R_H1 = DVJpsiPH1xsec_L_data['f'].copy()
+R_H1[(DVJpsiPH1xsec_L_data['Q']**2 > 1) & (DVJpsiPH1xsec_L_data['Q']**2 < 5)] = 0.052
+R_H1[(DVJpsiPH1xsec_L_data['Q']**2 > 5) & (DVJpsiPH1xsec_L_data['Q']**2 < 10)] = 0.23
+R_H1[(DVJpsiPH1xsec_L_data['Q']**2 > 10)] = 0.62
+R_H1_err = DVJpsiPH1xsec_L_data['f'].copy()
+R_H1_err[(DVJpsiPH1xsec_L_data['Q']**2 > 2) & (DVJpsiPH1xsec_L_data['Q']**2 < 5)] = 0.113
+R_H1_err[(DVJpsiPH1xsec_L_data['Q']**2 > 5) & (DVJpsiPH1xsec_L_data['Q']**2 < 10)] = 0.27
+R_H1_err[(DVJpsiPH1xsec_L_data['Q']**2 > 10)] = 0.61
+DVJpsiPH1xsec_L_data['f'] = DVJpsiPH1xsec_L_data['f'] / ((1 - DVJpsiPH1xsec_L_data['y']) / (1 - DVJpsiPH1xsec_L_data['y'] - DVJpsiPH1xsec_L_data['y']**2 / 2) + (1 / R_H1))
+DVJpsiPH1xsec_L_data['delta f'] = np.sqrt((DVJpsiPH1xsec_L_data['delta f'] / ((1 - DVJpsiPH1xsec_L_data['y']) / (1 - DVJpsiPH1xsec_L_data['y'] - DVJpsiPH1xsec_L_data['y']**2 / 2) + (1 / R_H1)))**2 + (R_H1_err * DVJpsiPH1xsec_L_data['f'] / (1 + (1 - DVJpsiPH1xsec_L_data['y']) / (1 - DVJpsiPH1xsec_L_data['y'] - DVJpsiPH1xsec_L_data['y']**2 / 2) * R_H1)**2)**2)
+DVJpsiPH1xsec_group_data = list(map(lambda set: DVJpsiPH1xsec_data[(DVJpsiPH1xsec_data['xB'] == set[0]) & (DVJpsiPH1xsec_data['t'] == set[1]) & ((DVJpsiPH1xsec_data['Q'] == set[2]))], xBtQlst_JpsiH))
+DVJpsiPH1xsec_L_group_data = list(map(lambda set: DVJpsiPH1xsec_L_data[(DVJpsiPH1xsec_data['xB'] == set[0]) & (DVJpsiPH1xsec_L_data['t'] == set[1]) & ((DVJpsiPH1xsec_L_data['Q'] == set[2]))], xBtQlst_JpsiH))
+
+DVJpsiPZEUSxsec_data = pd.read_csv('GUMPDATA/DVMP_HERA/DVJpsiPZEUSdt.csv', header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
+DVJpsiPZEUSxsec_data['Q'] = np.sqrt(DVJpsiPZEUSxsec_data['Q'])
+DVJpsiPZEUSxsec_data['t'] = -1 * DVJpsiPZEUSxsec_data['t']
+DVJpsiPZEUSxsec_data = DVJpsiPZEUSxsec_data[(DVJpsiPZEUSxsec_data['Q']>Q_threshold)]
+xBtQlst_JpsiZ = DVJpsiPZEUSxsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
+DVJpsiPZEUSxsec_L_data = DVJpsiPZEUSxsec_data.copy()
+R_ZEUS = DVJpsiPZEUSxsec_L_data['f'].copy()
+R_ZEUS[(DVJpsiPZEUSxsec_L_data['Q']**2 > 2) & (DVJpsiPZEUSxsec_L_data['Q']**2 < 5)] = 0.13
+R_ZEUS[(DVJpsiPZEUSxsec_L_data['Q']**2 > 5) & (DVJpsiPZEUSxsec_L_data['Q']**2 < 10)] = 0.33
+R_ZEUS[(DVJpsiPZEUSxsec_L_data['Q']**2 > 10)] = 1.19
+R_ZEUS_err = DVJpsiPZEUSxsec_L_data['f'].copy()
+R_ZEUS_err[(DVJpsiPZEUSxsec_L_data['Q']**2 > 2) & (DVJpsiPZEUSxsec_L_data['Q']**2 < 5)] = 0.19
+R_ZEUS_err[(DVJpsiPZEUSxsec_L_data['Q']**2 > 5) & (DVJpsiPZEUSxsec_L_data['Q']**2 < 10)] = 0.25
+R_ZEUS_err[(DVJpsiPZEUSxsec_L_data['Q']**2 > 10)] = 0.58
+DVJpsiPZEUSxsec_L_data['f'] = DVJpsiPZEUSxsec_L_data['f'] / ((1 - DVJpsiPZEUSxsec_L_data['y']) / (1 - DVJpsiPZEUSxsec_L_data['y'] - DVJpsiPZEUSxsec_L_data['y']**2 / 2) + (1 / R_ZEUS))
+DVJpsiPZEUSxsec_L_data['delta f'] = np.sqrt((DVJpsiPZEUSxsec_L_data['delta f'] / ((1 - DVJpsiPZEUSxsec_L_data['y']) / (1 - DVJpsiPZEUSxsec_L_data['y'] - DVJpsiPZEUSxsec_L_data['y']**2 / 2) + (1 / R_ZEUS)))**2 + (R_ZEUS_err * DVJpsiPZEUSxsec_L_data['f'] / (1 + (1 - DVJpsiPZEUSxsec_L_data['y']) / (1 - DVJpsiPZEUSxsec_L_data['y'] - DVJpsiPZEUSxsec_L_data['y']**2 / 2) * R_ZEUS)**2)**2)
+DVJpsiPZEUSxsec_group_data = list(map(lambda set: DVJpsiPZEUSxsec_data[(DVJpsiPZEUSxsec_data['xB'] == set[0]) & (DVJpsiPZEUSxsec_data['t'] == set[1]) & ((DVJpsiPZEUSxsec_data['Q'] == set[2]))], xBtQlst_JpsiZ))
+DVJpsiPZEUSxsec_L_group_data = list(map(lambda set: DVJpsiPZEUSxsec_L_data[(DVJpsiPZEUSxsec_data['xB'] == set[0]) & (DVJpsiPZEUSxsec_L_data['t'] == set[1]) & ((DVJpsiPZEUSxsec_L_data['Q'] == set[2]))], xBtQlst_JpsiZ))
+
 
 
 def PDF_theo(PDF_input: pd.DataFrame, Para: np.array):
@@ -116,6 +192,36 @@ def CFF_theo(xB, t, Q, Para_Unp, Para_Pol):
 
     return [ HCFF, ECFF, HtCFF, EtCFF ] # this can be a list of arrays of shape (N)
     # return np.stack([HCFF, ECFF, HtCFF, EtCFF], axis=-1)
+    
+def TFF_theo_rho(xB, t, Q, Para_Unp):
+    x = 0
+    xi = (1/(2 - xB) - (2*t*(-1 + xB))/(Q**2*(-2 + xB)**2))*xB
+    H_E = GPDobserv(x, xi, t, Q, 1)
+    HTFF_rho = H_E.TFF(Para_Unp[..., 0, :, :, :, :],1)
+    ETFF_rho = H_E.TFF(Para_Unp[..., 1, :, :, :, :],1)
+    
+
+    return [ HTFF_rho, ETFF_rho ]
+
+def TFF_theo_phi(xB, t, Q, Para_Unp):
+    x = 0
+    xi = (1/(2 - xB) - (2*t*(-1 + xB))/(Q**2*(-2 + xB)**2))*xB
+    H_E = GPDobserv(x, xi, t, Q, 1)
+    HTFF_phi = H_E.TFF(Para_Unp[..., 0, :, :, :, :],2)
+    ETFF_phi = H_E.TFF(Para_Unp[..., 1, :, :, :, :],2)
+    
+
+    return [ HTFF_phi, ETFF_phi ]
+
+def TFF_theo_jpsi(xB, t, Q, Para_Unp):
+    x = 0
+    xi = (1/(2 - xB) - (2*t*(-1 + xB))/(Q**2*(-2 + xB)**2))*xB
+    H_E = GPDobserv(x, xi, t, Q, 1)
+    HTFF_jpsi = H_E.TFF(Para_Unp[..., 0, :, :, :, :],3)
+    ETFF_jpsi = H_E.TFF(Para_Unp[..., 1, :, :, :, :],3)
+    
+
+    return [ HTFF_jpsi, ETFF_jpsi ]
 
 def DVCSxsec_theo(DVCSxsec_input: pd.DataFrame, CFF_input: np.array):
     # CFF_input is a list of np.arrays
@@ -151,6 +257,48 @@ def DVCSxsec_HERA_theo(DVCSxsec_data_HERA: pd.DataFrame, Para_Unp, Para_Pol):
 
     [HCFF, ECFF, HtCFF, EtCFF] = CFF_theo(xB, t, Q, np.expand_dims(Para_Unp, axis=0), np.expand_dims(Para_Pol, axis=0))
     return dsigma_DVCS_HERA(y, xB, t, Q, pol, HCFF, ECFF, HtCFF, EtCFF)
+
+def DVrhoPxsec_theo(DVrhoPxsec_input: pd.DataFrame, TFF_rho_input: np.array):
+    y = DVrhoPxsec_input['y'].to_numpy()
+    xB = DVrhoPxsec_input['xB'].to_numpy()
+    t = DVrhoPxsec_input['t'].to_numpy()
+    Q = DVrhoPxsec_input['Q'].to_numpy()    
+    [HTFF_rho, ETFF_rho] = TFF_rho_input
+    return 2*np.pi*dvmp.dsigma_rho_dt(y, xB, t, Q, 0, HTFF_rho, ETFF_rho)
+
+def DVphiPxsec_theo(DVphiPxsec_input: pd.DataFrame, TFF_phi_input: np.array):
+    y = DVphiPxsec_input['y'].to_numpy()
+    xB = DVphiPxsec_input['xB'].to_numpy()
+    t = DVphiPxsec_input['t'].to_numpy()
+    Q = DVphiPxsec_input['Q'].to_numpy()    
+    [HTFF_phi, ETFF_phi] = TFF_phi_input
+    return 2*np.pi*dvmp.dsigma_phi_dt(y, xB, t, Q, 0, HTFF_phi, ETFF_phi)
+
+def DVjpsiPxsec_theo(DVjpsiPxsec_input: pd.DataFrame, TFF_jpsi_input: np.array):
+    y = DVjpsiPxsec_input['y'].to_numpy()
+    xB = DVjpsiPxsec_input['xB'].to_numpy()
+    t = DVjpsiPxsec_input['t'].to_numpy()
+    Q = DVjpsiPxsec_input['Q'].to_numpy()    
+    [HTFF_jpsi, ETFF_jpsi] = TFF_jpsi_input
+    return 2*np.pi*dvmp.dsigma_Jpsi_dt(y, xB, t, Q, 0, HTFF_jpsi, ETFF_jpsi)
+
+def DVrhoPxsec_cost_xBtQ(DVrhoPxsec_data_xBtQ: pd.DataFrame, Para_Unp):
+    [xB, t, Q] = [DVrhoPxsec_data_xBtQ['xB'].iat[0], DVrhoPxsec_data_xBtQ['t'].iat[0], DVrhoPxsec_data_xBtQ['Q'].iat[0]] 
+    [HTFF_rho, ETFF_rho] = TFF_theo_rho(xB, t, Q, Para_Unp) # scalar for each of them
+    DVrhoP_pred_xBtQ = DVrhoPxsec_theo(DVrhoPxsec_data_xBtQ, TFF_rho_input = [HTFF_rho, ETFF_rho])
+    return np.sum(((DVrhoP_pred_xBtQ - DVrhoPxsec_data_xBtQ['f'])/ DVrhoPxsec_data_xBtQ['delta f']) ** 2 )
+
+def DVphiPxsec_cost_xBtQ(DVphiPxsec_data_xBtQ: pd.DataFrame, Para_Unp):
+    [xB, t, Q] = [DVphiPxsec_data_xBtQ['xB'].iat[0], DVphiPxsec_data_xBtQ['t'].iat[0], DVphiPxsec_data_xBtQ['Q'].iat[0]] 
+    [HTFF_phi, ETFF_phi] = TFF_theo_phi(xB, t, Q, Para_Unp) # scalar for each of them
+    DVphiP_pred_xBtQ = DVphiPxsec_theo(DVphiPxsec_data_xBtQ, TFF_phi_input = [HTFF_phi, ETFF_phi])
+    return np.sum(((DVphiP_pred_xBtQ - DVphiPxsec_data_xBtQ['f'])/ DVphiPxsec_data_xBtQ['delta f']) ** 2 )
+
+def DVjpsiPxsec_cost_xBtQ(DVjpsiPxsec_data_xBtQ: pd.DataFrame, Para_Unp):
+    [xB, t, Q] = [DVjpsiPxsec_data_xBtQ['xB'].iat[0], DVjpsiPxsec_data_xBtQ['t'].iat[0], DVjpsiPxsec_data_xBtQ['Q'].iat[0]] 
+    [HTFF_jpsi, ETFF_jpsi] = TFF_theo_jpsi(xB, t, Q, Para_Unp) # scalar for each of them
+    DVjpsiP_pred_xBtQ = DVjpsiPxsec_theo(DVjpsiPxsec_data_xBtQ, TFF_jpsi_input = [HTFF_jpsi, ETFF_jpsi])
+    return np.sum(((DVjpsiP_pred_xBtQ - DVjpsiPxsec_data_xBtQ['f'])/ DVjpsiPxsec_data_xBtQ['delta f']) ** 2 )
 
 def cost_forward_H(Norm_HuV,    alpha_HuV,    beta_HuV,    alphap_HuV, 
                    Norm_Hubar,  alpha_Hubar,  beta_Hubar,  alphap_Hqbar,
@@ -991,12 +1139,198 @@ def off_forward_fit(Paralst_Unp, Paralst_Pol):
     print("off forward fit finished...")
     return fit_off_forward
 
+def cost_dvmp(Norm_HuV,    alpha_HuV,    beta_HuV,    alphap_HuV, 
+                     Norm_Hubar,  alpha_Hubar,  beta_Hubar,  alphap_Hqbar,
+                     Norm_HdV,    alpha_HdV,    beta_HdV,    alphap_HdV,
+                     Norm_Hdbar,  alpha_Hdbar,  beta_Hdbar, 
+                     Norm_Hg,     alpha_Hg,     beta_Hg,     alphap_Hg,
+                     Norm_EuV,    alpha_EuV,    beta_EuV,    alphap_EuV,
+                     Norm_EdV,    R_E_Sea,      R_Hu_xi2,    R_Hd_xi2,    R_Hg_xi2,
+                     R_Eu_xi2,    R_Ed_xi2,     R_Eg_xi2,
+                     R_Hu_xi4,    R_Hd_xi4,     R_Hg_xi4,
+                     R_Eu_xi4,    R_Ed_xi4,     R_Eg_xi4,    bexp_HSea):
+
+    global Minuit_Counter, Time_Counter
+
+    time_now = time.time() - time_start
+    
+    if(time_now > Time_Counter * 600):
+        print('Runing Time:',round(time_now/60),'minutes. Cost function called total', Minuit_Counter, 'times.')
+        Time_Counter = Time_Counter + 1
+    
+    Minuit_Counter = Minuit_Counter + 1
+    Para_Unp_lst = [Norm_HuV,    alpha_HuV,    beta_HuV,    alphap_HuV, 
+                    Norm_Hubar,  alpha_Hubar,  beta_Hubar,  alphap_Hqbar,
+                    Norm_HdV,    alpha_HdV,    beta_HdV,    alphap_HdV,
+                    Norm_Hdbar,  alpha_Hdbar,  beta_Hdbar, 
+                    Norm_Hg,     alpha_Hg,     beta_Hg,     alphap_Hg,
+                    Norm_EuV,    alpha_EuV,    beta_EuV,    alphap_EuV,
+                    Norm_EdV,    R_E_Sea,      R_Hu_xi2,    R_Hd_xi2,    R_Hg_xi2,
+                    R_Eu_xi2,    R_Ed_xi2,     R_Eg_xi2,
+                    R_Hu_xi4,    R_Hd_xi4,     R_Hg_xi4,
+                    R_Eu_xi4,    R_Ed_xi4,     R_Eg_xi4,    bexp_HSea]
+
+    
+        
+    Para_Unp_all = ParaManager_Unp(Para_Unp_lst)
+    
+
+   # cost_DVrhoPZEUS_xBtQ = np.array(list(pool.map(partial(DVrhoPxsec_cost_xBtQ, Para_Unp = Para_Unp_all), DVrhoPZEUSxsec_group_data)))
+   # cost_DVrhoPZEUSxsec = np.sum(cost_DVrhoPZEUS_xBtQ)
+    
+   # cost_DVrhoPH1_xBtQ = np.array(list(pool.map(partial(DVrhoPxsec_cost_xBtQ, Para_Unp = Para_Unp_all), DVrhoPH1xsec_group_data)))
+   # cost_DVrhoPH1xsec = np.sum(cost_DVrhoPH1_xBtQ)
+    
+   # cost_DVphiPZEUS_xBtQ = np.array(list(pool.map(partial(DVphiPxsec_cost_xBtQ, Para_Unp = Para_Unp_all), DVphiPZEUSxsec_group_data)))
+   # cost_DVphiPZEUSxsec = np.sum(cost_DVphiPZEUS_xBtQ)
+    
+   # cost_DVphiPH1_xBtQ = np.array(list(pool.map(partial(DVphiPxsec_cost_xBtQ, Para_Unp = Para_Unp_all), DVphiPH1xsec_group_data)))
+   # cost_DVphiPH1xsec = np.sum(cost_DVphiPH1_xBtQ)
+   
+    cost_DVjpsiPZEUS_xBtQ = np.array(list(pool.map(partial(DVjpsiPxsec_cost_xBtQ, Para_Unp = Para_Unp_all), DVJpsiPZEUSxsec_L_group_data)))
+    cost_DVjpsiPZEUSxsec = np.sum(cost_DVjpsiPZEUS_xBtQ)
+    
+    cost_DVjpsiPH1_xBtQ = np.array(list(pool.map(partial(DVjpsiPxsec_cost_xBtQ, Para_Unp = Para_Unp_all), DVJpsiPH1xsec_L_group_data)))
+    cost_DVjpsiPH1xsec = np.sum(cost_DVjpsiPH1_xBtQ)
+
+    
+
+    return  cost_DVjpsiPZEUSxsec + cost_DVjpsiPH1xsec # cost_DVrhoPZEUSxsec + cost_DVrhoPH1xsec + cost_DVphiPZEUSxsec + cost_DVphiPH1xsec
+
+def dvmp_fit(Paralst_Unp):
+
+    [Norm_HuV_Init,    alpha_HuV_Init,    beta_HuV_Init,    alphap_HuV_Init, 
+     Norm_Hubar_Init,  alpha_Hubar_Init,  beta_Hubar_Init,  alphap_Hqbar_Init,
+     Norm_HdV_Init,    alpha_HdV_Init,    beta_HdV_Init,    alphap_HdV_Init,
+     Norm_Hdbar_Init,  alpha_Hdbar_Init,  beta_Hdbar_Init, 
+     Norm_Hg_Init,     alpha_Hg_Init,     beta_Hg_Init,     alphap_Hg_Init,
+     Norm_EuV_Init,    alpha_EuV_Init,    beta_EuV_Init,    alphap_EuV_Init,
+     Norm_EdV_Init,    R_E_Sea_Init,      R_Hu_xi2_Init,    R_Hd_xi2_Init,    R_Hg_xi2_Init,
+     R_Eu_xi2_Init,    R_Ed_xi2_Init,     R_Eg_xi2_Init,
+     R_Hu_xi4_Init,    R_Hd_xi4_Init,     R_Hg_xi4_Init,
+     R_Eu_xi4_Init,    R_Ed_xi4_Init,     R_Eg_xi4_Init,    bexp_HSea_Init] = Paralst_Unp
+
+    
+
+    fit_dvmp = Minuit(cost_dvmp, Norm_HuV = Norm_HuV_Init,     alpha_HuV = alpha_HuV_Init,      beta_HuV = beta_HuV_Init,     alphap_HuV = alphap_HuV_Init, 
+                                               Norm_Hubar = Norm_Hubar_Init, alpha_Hubar = alpha_Hubar_Init,  beta_Hubar = beta_Hubar_Init, alphap_Hqbar = alphap_Hqbar_Init,
+                                               Norm_HdV = Norm_HdV_Init,     alpha_HdV = alpha_HdV_Init,      beta_HdV = beta_HdV_Init,     alphap_HdV = alphap_HdV_Init,
+                                               Norm_Hdbar = Norm_Hdbar_Init, alpha_Hdbar = alpha_Hdbar_Init,  beta_Hdbar = beta_Hdbar_Init, 
+                                               Norm_Hg = Norm_Hg_Init,       alpha_Hg = alpha_Hg_Init,        beta_Hg = beta_Hg_Init,       alphap_Hg = alphap_Hg_Init,
+                                               Norm_EuV = Norm_EuV_Init,     alpha_EuV = alpha_EuV_Init,      beta_EuV = beta_EuV_Init,     alphap_EuV = alphap_EuV_Init, 
+                                               Norm_EdV = Norm_EdV_Init,     R_E_Sea = R_E_Sea_Init,          R_Hu_xi2 = R_Hu_xi2_Init,     R_Hd_xi2 = R_Hd_xi2_Init,     R_Hg_xi2 = R_Hg_xi2_Init,
+                                               R_Eu_xi2 = R_Eu_xi2_Init,     R_Ed_xi2 = R_Ed_xi2_Init,        R_Eg_xi2 = R_Eg_xi2_Init,
+                                               R_Hu_xi4 = R_Hu_xi4_Init,     R_Hd_xi4 = R_Hd_xi4_Init,        R_Hg_xi4 = R_Hg_xi4_Init,
+                                               R_Eu_xi4 = R_Eu_xi4_Init,     R_Ed_xi4 = R_Ed_xi4_Init,        R_Eg_xi4 = R_Eg_xi4_Init,     bexp_HSea = bexp_HSea_Init)
+    fit_dvmp.errordef = 1
+
+    fit_dvmp.limits['bexp_HSea']  = (0, 10)
+    #fit_dvmp.fixed['bexp_HSea'] = True
+    
+
+    fit_dvmp.fixed['Norm_HuV'] = True
+    fit_dvmp.fixed['alpha_HuV'] = True
+    fit_dvmp.fixed['beta_HuV'] = True
+    fit_dvmp.fixed['alphap_HuV'] = True
+    
+    #fit_dvmp.limits['Norm_Hubar']  = (0, 10)
+
+    fit_dvmp.fixed['Norm_Hubar'] = True
+    fit_dvmp.fixed['alpha_Hubar'] = True
+    fit_dvmp.fixed['beta_Hubar'] = True
+
+    fit_dvmp.fixed['alphap_Hqbar'] = True
+
+    fit_dvmp.fixed['Norm_HdV'] = True
+    fit_dvmp.fixed['alpha_HdV'] = True
+    fit_dvmp.fixed['beta_HdV'] = True
+    fit_dvmp.fixed['alphap_HdV'] = True
+    
+    #fit_dvmp.limits['Norm_Hdbar']  = (0, 10)
+
+    fit_dvmp.fixed['Norm_Hdbar'] = True
+    fit_dvmp.fixed['alpha_Hdbar'] = True
+    fit_dvmp.fixed['beta_Hdbar'] = True
+
+    
+
+    fit_dvmp.limits['Norm_Hg']=(0,10)
+    fit_dvmp.limits['alpha_Hg']=(0,10)
+    #fit_dvmp.limits['beta_Hg']=(0.5,10)
+
+    #fit_dvmp.fixed['Norm_Hg'] = True
+    #fit_dvmp.fixed['alpha_Hg'] = True
+    fit_dvmp.fixed['beta_Hg'] = True
+
+    fit_dvmp.fixed['Norm_EuV'] = True
+    fit_dvmp.fixed['alpha_EuV'] = True
+    fit_dvmp.fixed['beta_EuV'] = True
+    fit_dvmp.fixed['alphap_EuV'] = True
+
+    fit_dvmp.fixed['Norm_EdV'] = True
+
+    fit_dvmp.fixed['alphap_Hg'] = True
+    
+
+    fit_dvmp.fixed['R_E_Sea'] = True    
+    fit_dvmp.fixed['R_Hu_xi2'] = True
+    fit_dvmp.fixed['R_Hd_xi2'] = True     
+    fit_dvmp.fixed['R_Hg_xi2'] = True
+    fit_dvmp.fixed['R_Eu_xi2'] = True
+    fit_dvmp.fixed['R_Ed_xi2'] = True 
+    fit_dvmp.fixed['R_Eg_xi2'] = True
+    
+
+    fit_dvmp.fixed['R_Hg_xi4'] = True
+    fit_dvmp.fixed['R_Eg_xi4'] = True
+    
+
+    fit_dvmp.fixed['R_Hu_xi4']  = True 
+    fit_dvmp.fixed['R_Eu_xi4']  = True
+
+    fit_dvmp.fixed['R_Hd_xi4']  = True 
+    fit_dvmp.fixed['R_Ed_xi4']  = True
+    
+
+    
+
+    global Minuit_Counter, Time_Counter, time_start
+    Minuit_Counter = 0
+    Time_Counter = 1
+    time_start = time.time()
+    
+    fit_dvmp.migrad()
+    fit_dvmp.hesse()
+
+    ndof_dvmp = len(DVJpsiPZEUSxsec_data.index) + len(DVJpsiPH1xsec_data.index)  - fit_dvmp.nfit 
+
+    time_end = time.time() -time_start
+
+    with open('GUMP_Output/dvmp_fit.txt', 'w') as f:
+        print('Total running time: %.1f minutes. Total call of cost function: %3d.\n' % ( time_end/60, fit_dvmp.nfcn), file=f)
+        print('The chi squared/d.o.f. is: %.2f / %3d ( = %.2f ).\n' % (fit_dvmp.fval, ndof_dvmp, fit_dvmp.fval/ndof_dvmp), file = f)
+        print('Below are the final output parameters from iMinuit:', file = f)
+        print(*fit_dvmp.values, sep=", ", file = f)
+        print(*fit_dvmp.errors, sep=", ", file = f)
+        print(fit_dvmp.params, file = f)
+
+    with open("GUMP_Output/dvmp_cov.csv","w",newline='') as my_csv:
+        csvWriter = csv.writer(my_csv,delimiter=',')
+        csvWriter.writerows([*fit_dvmp.covariance])
+
+    print("dvmp fit finished...")
+    return fit_dvmp
+
 if __name__ == '__main__':
     pool = Pool()
     time_start = time.time()
-    """
-    Paralst_Unp     = [4.922551238,0.21635596,3.228702555,2.349193947,0.163440601,1.135738688,6.896742038,0.15,3.358541913,0.184196049,4.41726899,3.475742056,0.249183402,1.051922382,6.548676693,2.864281106,1.052305853,7.412779844,0.15,0.161159704,0.916012032,1.02239598,0.41423421,-0.198595321,0.0,0.18394307,-2.260952723,0,1.159322377,2.569800357,0,0,0,0,0,0,0,3.296968216]
+    
+    Paralst_Unp     = [0*4.922551238,0.21635596,3.228702555,2.349193947,0*0.414,1.022,7.737,0.15,0*3.358541913,0.184196049,4.41726899,3.475742056,0*0.414,1.022,7.737,2.690, 0.469, 3.15, 0.15,0*0.161159704,0*0.916012032,0*1.02239598,0*0.41423421,0*-0.198595321,0*0.0,0*0.18394307,0*-2.260952723,0*0,0*1.159322377,0*2.569800357,0,0,0,0,0,0,0,2.6]
     Paralst_Pol     = [4.529773253,-0.246812532,3.037043159,2.607360484,0.076575866,0.516192897,4.369657188,0.15,-0.711694724,0.210181857,3.243538578,4.319727451,-0.057100694,0.612255908,2.099180441,0.243247279,0.630824175,2.71840147,0.15,9.065736349,0.79999977,7.357005187,2.083472023,-3.562901039,0.0,-0.634095327,-7.058667382,0,2.861662204,23.1231347,0,0,0,0,0,0,0,5.379752095]
+
+    fit_dvmp = dvmp_fit(Paralst_Unp)
+
+    """
 
     fit_forward_H   = forward_H_fit(Paralst_Unp)
     Paralst_Unp     = np.array(fit_forward_H.values)
@@ -1009,10 +1343,12 @@ if __name__ == '__main__':
 
     fit_forward_Et  = forward_Et_fit(Paralst_Pol)
     Paralst_Pol     = np.array(fit_forward_Et.values)
-
-    fit_off_forward = off_forward_fit(Paralst_Unp, Paralst_Pol)
-
+    
     """
-    print(cost_off_forward_test(4.92252245341075, 0.21632833928300776, 3.228525762889928, 2.347470994624827, 0.16344460105600744, 1.135739437288775, 6.893895640954224, 0.15, 3.358767931921898, 0.1842893653407356, 4.417802345266761, 3.4816671934041685, 0.2491737223289409, 1.0519258916411531, 6.553873836594824, 2.8642810381756982, 1.0523058580968585, 7.412779706371915, 0.15, 0.1813228421702434, 0.9068471909677753, 1.1018931174030364, 0.4607676086634599, -0.22341404954304522, 0.7683213780361391, 0.22948701913308733, -2.638627981453611, 0.0, 0.7985103392773935, 3.404262017724412, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.44764738950069, 4.833430384423373, -0.26355746727810136, 3.1855567245326317, 2.1817250267982997, 0.06994083000560514, 0.5376473088622284, 4.22898219488582, 0.15, -0.663583721889865, 0.24767388786943867, 3.5722668493718626, 0.5420415127277624, -0.08640413690298866, 0.4946733452347538, 2.553713733867575, 0.24307061469378405, 0.6309890923077655, 2.716624295877619, 0.15, 7.99299605623125, 0.799997370438831, 6.415448025778247, 2.0758963463111515, -2.407059919688728, 37.65971219196447, 0.24589373380232807, 1.6561364171210822, 0.0, 2.6840962695831894, 37.58453653636456, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.852441955678458))
+
+    #fit_off_forward = off_forward_fit(Paralst_Unp, Paralst_Pol)
+
+    
+   # print(cost_off_forward_test(4.92252245341075, 0.21632833928300776, 3.228525762889928, 2.347470994624827, 0.16344460105600744, 1.135739437288775, 6.893895640954224, 0.15, 3.358767931921898, 0.1842893653407356, 4.417802345266761, 3.4816671934041685, 0.2491737223289409, 1.0519258916411531, 6.553873836594824, 2.8642810381756982, 1.0523058580968585, 7.412779706371915, 0.15, 0.1813228421702434, 0.9068471909677753, 1.1018931174030364, 0.4607676086634599, -0.22341404954304522, 0.7683213780361391, 0.22948701913308733, -2.638627981453611, 0.0, 0.7985103392773935, 3.404262017724412, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.44764738950069, 4.833430384423373, -0.26355746727810136, 3.1855567245326317, 2.1817250267982997, 0.06994083000560514, 0.5376473088622284, 4.22898219488582, 0.15, -0.663583721889865, 0.24767388786943867, 3.5722668493718626, 0.5420415127277624, -0.08640413690298866, 0.4946733452347538, 2.553713733867575, 0.24307061469378405, 0.6309890923077655, 2.716624295877619, 0.15, 7.99299605623125, 0.799997370438831, 6.415448025778247, 2.0758963463111515, -2.407059919688728, 37.65971219196447, 0.24589373380232807, 1.6561364171210822, 0.0, 2.6840962695831894, 37.58453653636456, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.852441955678458))
 
 
