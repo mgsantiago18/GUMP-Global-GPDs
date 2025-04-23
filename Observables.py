@@ -6,7 +6,7 @@ import scipy as sp
 import numpy as np
 from scipy.integrate import quad_vec, fixed_quad
 from scipy.special import gamma
-from Evolution import Moment_Evo_LO,Moment_Evo_LO_NSp1, TFF_Evo_LO, CFF_Evo_LO, TFF_Evo_NLO_evWC, TFF_Evo_NLO_evMOM, CFF_Evo_NLO_evWC,CFF_Evo_NLO_evMOM, GPD_Moment_Evo_NLO,tPDF_Moment_Evo_NLO, fixed_quadvec, inv_flav_trans
+from Evolution import Moment_Evo_LO,Moment_Evo_LO_NSp1, TFF_Evo_LO, CFF_Evo_LO, TFF_Evo_NLO_evWC, TFF_Evo_NLO_evMOM, CFF_Evo_NLO_evWC,CFF_Evo_NLO_evMOM, GPD_Moment_Evo_NLO,tPDF_Moment_Evo_NLO, tPDF_Moment_Evo_NLO_NSp1, fixed_quadvec, inv_flav_trans
 from Parameters import Moment_Sum
 from Evolution import ConfWaveFuncQ, ConfWaveFuncG, ConfWaveFuncQ_over_sinpij, ConfWaveFuncG_over_sinpij
 
@@ -342,41 +342,27 @@ class GPDobserv (object) :
             #Note: Naively, this function simply returns Integrand_Mellin_Barnes([0.]) like the GPD1() above.
             #      However, the zeroth moment is only defined for valence quark not sea quark or gluon
             #      Thus there will be divergences in moment when j = 0.       
-            #      Here we use nan_to_num to set all the divergence to zero, such that the zero moment of the sea quark and gluon do not contribute to GPD.
+            #      This will be taken care of by the Moment_Evo_LO_NSp1() function that evolve the NS part of the moments only (charge even contributions are zero)
             #      
             #      The better choice is to model the leading moment terms separately, and fit them to other quantities since those terms are not well constrained by the CFF/TFF anyway.
 
-            eps= 10. **(-5) 
-            j0 = np.array([0.]) + eps
-            j00 = np.array([0.])
-            # j0 has been shifted with eps whereas j00 are not;
-            # j0 is for evolved moments and j00 is for wave function
-            # The evolution kernel has numeric singular term at j=0 so it's shifted
-            # The wave function is taken at j exactly 0 so it's truncated at x=xi and avoid further numeric issues.
+            j0 = np.array([0.]) 
+
             ConfFlav     = Moment_Sum(j0, self.t, Para_Forward)
             ConfFlav_xi2 = Moment_Sum(j0, self.t, Para_xi2)
             ConfFlav_xi4 = Moment_Sum(j0, self.t, Para_xi4)
-            print("LO GPD j0")
-            print(ConfFlav)
-            ConfFlav     = np.nan_to_num(ConfFlav)
-            ConfFlav_xi2 = np.nan_to_num(ConfFlav_xi2)
-            ConfFlav_xi4 = np.nan_to_num(ConfFlav_xi4)
-            print(ConfFlav)
-            ConfEv     = Moment_Evo_LO(j0, NFEFF, self.p, self.Q, ConfFlav)
-            ConfEv_xi2 = Moment_Evo_LO(j0+2, NFEFF, self.p, self.Q, ConfFlav_xi2)
-            ConfEv_xi4 = Moment_Evo_LO(j0+4, NFEFF, self.p, self.Q, ConfFlav_xi4)
-            print(ConfEv)
-            ConfEv = np.nan_to_num(ConfEv)
-            ConfEv_xi2 = np.nan_to_num(ConfEv_xi2)
-            ConfEv_xi4 = np.nan_to_num(ConfEv_xi4)
-            print(ConfEv)
+
+            ConfEv     = Moment_Evo_LO_NSp1(j0, NFEFF, self.p, self.Q, ConfFlav)
+            ConfEv_xi2 = Moment_Evo_LO_NSp1(j0+2, NFEFF, self.p, self.Q, ConfFlav_xi2)
+            ConfEv_xi4 = Moment_Evo_LO_NSp1(j0+4, NFEFF, self.p, self.Q, ConfFlav_xi4)
+            
             ConfFlavEv     = np.einsum('...ij, ...j->...i', inv_flav_trans, ConfEv) #(N, 5)
             ConfFlavEv_xi2 = np.einsum('...ij, ...j->...i', inv_flav_trans, ConfEv_xi2)
             ConfFlavEv_xi4 = np.einsum('...ij, ...j->...i', inv_flav_trans, ConfEv_xi4)
-            print(ConfFlavEv)
-            return Flv_Intp(np.einsum('...ij,...j->...i', ConfWaveConv(j00), ConfFlavEv) \
-                    + self.xi ** 2 * np.einsum('...ij,...j->...i', ConfWaveConv(j00+2), ConfFlavEv_xi2) \
-                    + self.xi ** 4 * np.einsum('...ij,...j->...i', ConfWaveConv(j00+4), ConfFlavEv_xi4),flv)
+
+            return Flv_Intp(np.einsum('...ij,...j->...i', ConfWaveConv(j0), ConfFlavEv) \
+                    + self.xi ** 2 * np.einsum('...ij,...j->...i', ConfWaveConv(j0+2), ConfFlavEv_xi2) \
+                    + self.xi ** 4 * np.einsum('...ij,...j->...i', ConfWaveConv(j0+4), ConfFlavEv_xi4),flv)
             
         reJ = 1 - 0.2
         Max_imJ = 180
@@ -481,42 +467,27 @@ class GPDobserv (object) :
             #Note: Naively, this function simply returns Integrand_Mellin_Barnes([0.]) like the GPD1() above.
             #      However, the zeroth moment is only defined for valence quark not sea quark or gluon
             #      Thus there will be divergences in moment when j = 0.       
-            #      Here we use nan_to_num to set all the divergence to zero, such that the zero moment of the sea quark and gluon do not contribute to GPD.
+            #      This will be taken care of by the tPDF_Moment_Evo_NLO_NSp1() function that evolve the NS part of the moments only (charge even contributions are zero)
             #      
             #      The better choice is to model the leading moment terms separately, and fit them to other quantities since those terms are not well constrained by the CFF/TFF anyway.
 
-            eps= 10. **(-5) 
-            j0 = np.array([0.]) + eps
-            j00 = np.array([0.])
-            # j0 has been shifted with eps whereas j00 are not;
-            # j0 is for evolved moments and j00 is for wave function
-            # The evolution kernel has numeric singular term at j=0 so it's shifted
-            # The wave function is taken at j exactly 0 so it's truncated at x=xi and avoid further numeric issues.
+            j0 = np.array([0.]) 
+
             ConfFlav     = Moment_Sum(j0, self.t, Para_Forward)
             ConfFlav_xi2 = Moment_Sum(j0, self.t, Para_xi2)
             ConfFlav_xi4 = Moment_Sum(j0, self.t, Para_xi4)
-            print("NLO GPD j0")
-            print(ConfFlav)
-            ConfFlav     = np.nan_to_num(ConfFlav)
-            ConfFlav_xi2 = np.nan_to_num(ConfFlav_xi2)
-            ConfFlav_xi4 = np.nan_to_num(ConfFlav_xi4)
-            print(ConfFlav)
-            ConfEv     = tPDF_Moment_Evo_NLO(j0, NFEFF, self.p, self.Q, ConfFlav)
-            ConfEv_xi2 = tPDF_Moment_Evo_NLO(j0+2, NFEFF, self.p, self.Q, ConfFlav_xi2)
-            ConfEv_xi4 = tPDF_Moment_Evo_NLO(j0+4, NFEFF, self.p, self.Q, ConfFlav_xi4)
-            print(ConfEv)
-            ConfEv = np.nan_to_num(ConfEv)
-            ConfEv_xi2 = np.nan_to_num(ConfEv_xi2)
-            ConfEv_xi4 = np.nan_to_num(ConfEv_xi4)
-            print(ConfEv)
+
+            ConfEv     = tPDF_Moment_Evo_NLO_NSp1(j0, NFEFF, self.p, self.Q, ConfFlav)
+            ConfEv_xi2 = tPDF_Moment_Evo_NLO_NSp1(j0+2, NFEFF, self.p, self.Q, ConfFlav_xi2)
+            ConfEv_xi4 = tPDF_Moment_Evo_NLO_NSp1(j0+4, NFEFF, self.p, self.Q, ConfFlav_xi4)
+
             ConfFlavEv     = np.einsum('...ij, ...j->...i', inv_flav_trans, ConfEv) #(N, 5)
             ConfFlavEv_xi2 = np.einsum('...ij, ...j->...i', inv_flav_trans, ConfEv_xi2)
             ConfFlavEv_xi4 = np.einsum('...ij, ...j->...i', inv_flav_trans, ConfEv_xi4)
-            print(ConfFlavEv)
             
-            return Flv_Intp(np.einsum('...ij,...j->...i', ConfWaveConv(j00), ConfFlavEv) \
-                    + self.xi ** 2 * np.einsum('...ij,...j->...i', ConfWaveConv(j00+2), ConfFlavEv_xi2) \
-                    + self.xi ** 4 * np.einsum('...ij,...j->...i', ConfWaveConv(j00+4), ConfFlavEv_xi4),flv)
+            return Flv_Intp(np.einsum('...ij,...j->...i', ConfWaveConv(j0), ConfFlavEv) \
+                    + self.xi ** 2 * np.einsum('...ij,...j->...i', ConfWaveConv(j0+2), ConfFlavEv_xi2) \
+                    + self.xi ** 4 * np.einsum('...ij,...j->...i', ConfWaveConv(j0+4), ConfFlavEv_xi4),flv)
         
         reJ = 1 - 0.2
         Max_imJ = 180
