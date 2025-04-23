@@ -184,7 +184,26 @@ def compute_rratio(args):
 if __name__ == '__main__':
     pool = Pool()
     
-    x=0.001
+    x=0.1
+    Q0=2.
+    _GPD_theo = GPDobserv(x,x,0.0,Q0,1)
+    gpd1 = (_GPD_theo.GPD('u',Para_spe,p_order= 1))
+    gpd2 = (_GPD_theo.GPD('d',Para_spe,p_order= 1))
+    gpd3 = (_GPD_theo.GPD('g',Para_spe,p_order= 1))
+    gpd4 = (_GPD_theo.GPD('u',Para_spe,p_order= 2))
+    gpd5 = (_GPD_theo.GPD('d',Para_spe,p_order= 2))
+    gpd6 = (_GPD_theo.GPD('g',Para_spe,p_order= 2))
+    print(f'Up quark GPD at mu={Q0} GeV and x=xi={x}:')
+    print(gpd1)
+    print(gpd4)
+    print(f'Down quark GPD at mu={Q0} GeV and x=xi={x}:')
+    print(gpd2)
+    print(gpd5)
+    print(f'Gluon GPD at mu={Q0} GeV and x=xi={x}:')
+    print(gpd3)
+    print(gpd6)
+    
+    x=0.1
     Q0=3.
     _GPD_theo = GPDobserv(x,x,0.0,Q0,1)
     gpd1 = (_GPD_theo.GPD('u',Para_spe,p_order= 1))
@@ -193,13 +212,13 @@ if __name__ == '__main__':
     gpd4 = (_GPD_theo.GPD('u',Para_spe,p_order= 2))
     gpd5 = (_GPD_theo.GPD('d',Para_spe,p_order= 2))
     gpd6 = (_GPD_theo.GPD('g',Para_spe,p_order= 2))
-    print('Up quark PDF:')
+    print(f'Up quark GPD at mu={Q0} GeV and x=xi={x}:')
     print(gpd1)
     print(gpd4)
-    print('Down quark PDF:')
+    print(f'Down quark GPD at mu={Q0} GeV and x=xi={x}:')
     print(gpd2)
     print(gpd5)
-    print('Gluon PDF:')
+    print(f'Gluon GPD at mu={Q0} GeV and x=xi={x}:')
     print(gpd3)
     print(gpd6)
     '''
