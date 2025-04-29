@@ -3,17 +3,17 @@ The minimizer using iMinuit, which takes 1-D array for the input parameters only
 Extra efforts needed to convert the form of the parameters.
 """
 # Number of GPD species, 4 leading-twist GPDs including H, E Ht, Et are needed.
-NumofGPDSpecies = 4
+#NumofGPDSpecies = 4
 # Number of flavor factor, Flavor_Factor = 2 * nf + 1 needed including 2 * nf quark (antiquark) and one gluon
-Flavor_Factor = 2 * 2 + 1
+#Flavor_Factor = 2 * 2 + 1
 # Number of ansatz, 1 set of (N, alpha, beta, alphap) will be used to start with
-init_NumofAnsatz = 1
+#init_NumofAnsatz = 1
 # Size of one parameter set, a set of parameters (N, alpha, beta, alphap) contain 4 parameters
-Single_Param_Size = 4
+#Single_Param_Size = 4
 # A factor of 3 including the xi^0, xi^2, xi^4 terms
-xi2_Factor = 3
+#xi2_Factor = 3
 # Total number of parameters 
-Tot_param_Size = NumofGPDSpecies * xi2_Factor * Flavor_Factor *  init_NumofAnsatz * Single_Param_Size
+#Tot_param_Size = NumofGPDSpecies * xi2_Factor * Flavor_Factor *  init_NumofAnsatz * Single_Param_Size
 
 import numpy as np
 import scipy as sp
@@ -54,13 +54,15 @@ def ParaManager_Unp(Paralst: np.array):
     #R_Hd_xi4 = 0
     #R_Eu_xi4 = 0
     #R_Ed_xi4 = 0
-
+    # Ansatz_Place_Holder here is used such that it doesn't contribute to the moments, but serve a place holder 
+    # To activate the second (or more) ansatz but only for gluons, we use place holder to keep the shape regular.
+    Ansatz_Place_Holder = [0,1,1,0,0,0]
     # Initial forward parameters for the H of (uV, ubar, dV, dbar,g) distributions
-    H_uV =   np.array([[Norm_HuV,   alpha_HuV,   beta_HuV,   alphap_HuV,   0,         0]])
-    H_ubar = np.array([[Norm_Hubar, alpha_Hubar, beta_Hubar, alphap_Hqbar, bexp_HSea, 0]])
-    H_dV =   np.array([[Norm_HdV,   alpha_HdV,   beta_HdV,   alphap_HdV,   0,         0]])
-    H_dbar = np.array([[Norm_Hdbar, alpha_Hdbar, beta_Hdbar, alphap_Hqbar, bexp_HSea, 0]])
-    H_g =    np.array([[Norm_Hg,    alpha_Hg,    beta_Hg,    alphap_Hg,    bexp_Hg,   Invm2_Hg]])
+    H_uV =   np.array([[Norm_HuV,   alpha_HuV,   beta_HuV,   alphap_HuV,   0,         0], Ansatz_Place_Holder])
+    H_ubar = np.array([[Norm_Hubar, alpha_Hubar, beta_Hubar, alphap_Hqbar, bexp_HSea, 0], Ansatz_Place_Holder])
+    H_dV =   np.array([[Norm_HdV,   alpha_HdV,   beta_HdV,   alphap_HdV,   0,         0], Ansatz_Place_Holder])
+    H_dbar = np.array([[Norm_Hdbar, alpha_Hdbar, beta_Hdbar, alphap_Hqbar, bexp_HSea, 0], Ansatz_Place_Holder])
+    H_g =    np.array([[Norm_Hg,    alpha_Hg,    beta_Hg,    alphap_Hg,    bexp_Hg,   Invm2_Hg], Ansatz_Place_Holder])
 
     # Initial xi^2 parameters for the H of (uV, ubar, dV, dbar,g) distributions
     """
@@ -83,9 +85,9 @@ def ParaManager_Unp(Paralst: np.array):
     """
         Three free parameter R_E_u, R_E_d, R_E_g for the E/H ratio 
     """
-    E_uV =   np.array([[Norm_EuV,   alpha_EuV,   beta_EuV,   alphap_EuV, 0, 0]])
+    E_uV =   np.array([[Norm_EuV,   alpha_EuV,   beta_EuV,   alphap_EuV, 0, 0], Ansatz_Place_Holder])
     E_ubar = np.einsum('...i,i->...i', H_ubar,   [R_E_Sea,1,1,1,1,1])
-    E_dV =   np.array([[Norm_EdV,   alpha_EuV,   beta_EuV,   alphap_EuV, 0, 0]])
+    E_dV =   np.array([[Norm_EdV,   alpha_EuV,   beta_EuV,   alphap_EuV, 0, 0], Ansatz_Place_Holder])
     E_dbar = np.einsum('...i,i->...i', H_dbar,   [R_E_Sea,1,1,1,1,1])
     E_g =    np.einsum('...i,i->...i', H_g,      [R_E_Sea,1,1,1,1,1])
 
@@ -154,14 +156,17 @@ def ParaManager_Pol(Paralst: np.array):
     R_Etg_xi2 = 0
     R_Htg_xi4 = 0
     R_Etg_xi4 = 0
-
+    
+    # Ansatz_Place_Holder here is used such that it doesn't contribute to the moments, but serve a place holder 
+    # To activate the second (or more) ansatz but only for gluons, we use place holder to keep the shape regular.
+    Ansatz_Place_Holder = [0,1,1,0,0,0]
     # Initial forward parameters for the Ht of (uV, ubar, dV, dbar,g) distributions
 
-    Ht_uV =   np.array([[Norm_HtuV,   alpha_HtuV,   beta_HtuV,   alphap_HtuV,   0,          0]])
-    Ht_ubar = np.array([[Norm_Htubar, alpha_Htubar, beta_Htubar, alphap_Htqbar, bexp_HtSea, 0]])
-    Ht_dV =   np.array([[Norm_HtdV,   alpha_HtdV,   beta_HtdV,   alphap_HtdV,   0,          0]])
-    Ht_dbar = np.array([[Norm_Htdbar, alpha_Htdbar, beta_Htdbar, alphap_Htqbar, bexp_HtSea, 0]])
-    Ht_g =    np.array([[Norm_Htg,    alpha_Htg,    beta_Htg,    alphap_Htg,    bexp_HtSea, 0]])
+    Ht_uV =   np.array([[Norm_HtuV,   alpha_HtuV,   beta_HtuV,   alphap_HtuV,   0,          0], Ansatz_Place_Holder])
+    Ht_ubar = np.array([[Norm_Htubar, alpha_Htubar, beta_Htubar, alphap_Htqbar, bexp_HtSea, 0], Ansatz_Place_Holder])
+    Ht_dV =   np.array([[Norm_HtdV,   alpha_HtdV,   beta_HtdV,   alphap_HtdV,   0,          0], Ansatz_Place_Holder])
+    Ht_dbar = np.array([[Norm_Htdbar, alpha_Htdbar, beta_Htdbar, alphap_Htqbar, bexp_HtSea, 0], Ansatz_Place_Holder])
+    Ht_g =    np.array([[Norm_Htg,    alpha_Htg,    beta_Htg,    alphap_Htg,    bexp_HtSea, 0], Ansatz_Place_Holder])
 
     # Initial xi^2 parameters for the Ht of (uV, ubar, dV, dbar,g) distributions
     """
@@ -183,9 +188,9 @@ def ParaManager_Pol(Paralst: np.array):
     """
         Three free parameter R_Et_u, R_Et_d, R_E_g for the Et/Ht ratio 
     """
-    Et_uV =   np.array([[Norm_EtuV,   alpha_EtuV,   beta_EtuV,   alphap_EtuV, 0, 0]])
+    Et_uV =   np.array([[Norm_EtuV,   alpha_EtuV,   beta_EtuV,   alphap_EtuV, 0, 0], Ansatz_Place_Holder])
     Et_ubar = np.einsum('...i,i->...i', Ht_ubar, [R_Et_Sea,1,1,1,1,1])
-    Et_dV =   np.array([[Norm_EtdV,   alpha_EtuV,   beta_EtuV,   alphap_EtuV, 0, 0]])
+    Et_dV =   np.array([[Norm_EtdV,   alpha_EtuV,   beta_EtuV,   alphap_EtuV, 0, 0], Ansatz_Place_Holder])
     Et_dbar = np.einsum('...i,i->...i', Ht_dbar, [R_Et_Sea,1,1,1,1,1])
     Et_g =    np.einsum('...i,i->...i', Ht_g,    [R_Et_Sea,1,1,1,1,1])
 

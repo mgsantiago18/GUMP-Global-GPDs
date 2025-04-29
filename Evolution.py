@@ -912,7 +912,7 @@ def Charge_Factor(particle:int):
         return np.array([0, -1/6, 0, 5/18, 5/18])
         
     if (particle==1):
-        return f_rho * np.array([0,1,0,1/np.sqrt(2),1/np.sqrt(2)])
+        return f_rho * np.array([0,-1/(6*np.sqrt(2)),0,1/np.sqrt(2),1/np.sqrt(2)])  
     
     if (particle==3):
         return f_jpsi * np.array([0,0,0,2/3,2/3])
@@ -1230,7 +1230,6 @@ def Moment_Evo_LO_NSp1(j: np.array, nf: int, p: int, mu: float, ConfFlav: np.arr
     """
     assert j.ndim == 1, "Check dimension of j, must be 1D array" # shape (N,)
     assert p == 1, "Check parity, it must be +1 for the vector case" 
-    j0=j[0]
 
     # Input pass the criteria, remove the potentially divergent moments:
     ConfFlav = np.nan_to_num(ConfFlav)
@@ -1242,15 +1241,20 @@ def Moment_Evo_LO_NSp1(j: np.array, nf: int, p: int, mu: float, ConfFlav: np.arr
 
     # Taking the non-singlet and singlet parts of the conformal moments
     ConfNS = ConfEvoBasis[..., :3] # (N, 3)
-    ConfS = np.zeros_like(ConfEvoBasis[..., -2:]) # (N, 2)
 
-    # Calling evolution mulitiplier
-    [evons, evoa] = evolop(j, nf, p, mu) # (N) and (N, 2, 2)
+    R = AlphaS(nloop_alphaS, nf, mu)/AlphaS(nloop_alphaS, nf, Init_Scale_Q) # shape N
+    R = np.array(R)
+    b0 = beta0(nf) # scalar
+    gam0NS = non_singlet_LO(j+1, nf, p) #this function is already numpy compatible
+    # shape (N)
+    
+    # Non-singlet evolution factor 
+    evons = R**(-gam0NS/b0) #(N)
 
     # non-singlet part evolves multiplicatively
     EvoConfNS = evons[..., np.newaxis] * ConfNS # (N, 3)
     # singlet part mixes with the gluon
-    EvoConfS = np.einsum('...ij, ...j->...i', evoa, ConfS) # (N, 2)
+    EvoConfS = np.zeros_like(ConfEvoBasis[..., -2:]) # (N, 2)
 
     # Recombing the non-singlet and singlet parts
     EvoConf = np.concatenate((EvoConfNS, EvoConfS), axis=-1) # (N, 5)
@@ -2238,6 +2242,77 @@ def tPDF_Moment_Evo_NLO(j: np.array, nf: int, p: int, mu: float, ConfFlav: np.ar
     # LO plus NLO evolution    
     conf_ev_NS_tot = confNS_ev0 + confNS_ev1
     conf_ev_SG_tot = confSG_ev0 + confSG_ev1
+
+    # Recombing the non-singlet and singlet parts
+    EvoConf = np.concatenate((conf_ev_NS_tot, conf_ev_SG_tot), axis=-1) # (N, 5)    
+
+    return EvoConf
+
+@np_cache_tPDF_moment
+def tPDF_Moment_Evo_NLO_NSp1(j: np.array, nf: int, p: int, mu: float, ConfFlav: np.array) -> np.array:
+    """FORWARD Next-to-leading order evolved conformal moments in the evolution basis (Evolved moment method)    
+    
+    This function removes the off-diagonal pieces in Moment_Evo_NLO()
+    
+    Also this function deals with the j=0 singularity in the Moment_Evo_NLO(). We only evaluate the j=0 contributions for the charge odd terms
+    
+    Args:
+        j: conformal spin j (conformal spin is actually j+2 but anyway): array (N,)
+        nf: number of effective fermions; 
+        p (int): 1 for vector-like GPD (Ht, Et), -1 for axial-vector-like GPDs (Ht, Et): scalar
+        mu: final evolution scale: scalar
+        ConfFlav: unevolved conformal moments
+
+    Returns:
+        Next-to-leading order evolved conformal moments in the evolution basis in the forward limit (to be combined with inverse Mellin transform wave function)
+        return shape (N, 5)
+        
+    | The j here accept array input and preferrably just 1D for the contour integral in j. 
+    | Therefore, j has shape (N,) where N is the interpolating order of the fixed quad.
+    | Other quantities must be broadcastable with j and thus they should be preferrably scalar
+    """
+    
+    assert j.ndim == 1, "Check dimension of j, must be 1D array" # shape (N,)
+    assert p == 1, "Check parity, it must be +1 for the vector case" 
+    # Input pass the criteria, remove the potentially divergent moments:
+    ConfFlav = np.nan_to_num(ConfFlav)
+    
+    # Transform the unevolved moments to evolution basis
+    ConfEvoBasis = np.einsum('ij, ...j->...i', flav_trans, ConfFlav) # shape (N, 5)
+    # Taking the non-singlet and singlet parts of the conformal moments
+    ConfNS = ConfEvoBasis[..., :3] # (N, 3)
+    ConfSG = ConfEvoBasis[..., -2:] # (N, 2)
+   
+    # Set up evolution operator for WCs
+    Alphafact = np.array(AlphaS(nloop_alphaS, nf, mu)) / np.pi / 2
+    R = AlphaS(nloop_alphaS, nf, mu)/AlphaS(nloop_alphaS, nf, Init_Scale_Q) # shape N
+    R = np.array(R)
+  
+    b0 = beta0(nf)
+
+    # NS LO evolution operator
+    gam0NS = non_singlet_LO(j+1, nf, p)
+    evola0NS = R**(-gam0NS/b0)
+    
+    # LO evolved moments
+    confNS_ev0 = np.einsum('...,...i->...i',evola0NS, ConfNS)
+    
+    # NS diagonal NLO evolution operator, note in evolution basis (qVal, q_du_plus, q_du_minus) has parity (-1,1,-1)
+    amuindepNS_stack = np.stack((amuindepNS(j,nf,p,-1),\
+                                 amuindepNS(j,nf,p,1), \
+                                 amuindepNS(j,nf,p,-1)), axis=-1)
+
+    evola1NS_diag_plus = np.einsum('...,...i->...i',Alphafact * evola0NS * rmudepNS(nf, gam0NS, gam0NS, mu),amuindepNS_stack ) # shape (N,) and (N,3) to (N,3)
+
+    # NLO NS diagonal evolutioon 
+    confNS_ev1_diag = np.einsum('...i,...i->...i',evola1NS_diag_plus,ConfNS) # shape (N,3) and (N,3) to (N,3)
+
+    # Combine the diagonal and off-diagonal pieces
+    confNS_ev1 = confNS_ev1_diag
+    
+    # LO plus NLO evolution    
+    conf_ev_NS_tot = confNS_ev0 + confNS_ev1
+    conf_ev_SG_tot = np.zeros_like(ConfEvoBasis[..., -2:])
 
     # Recombing the non-singlet and singlet parts
     EvoConf = np.concatenate((conf_ev_NS_tot, conf_ev_SG_tot), axis=-1) # (N, 5)    
