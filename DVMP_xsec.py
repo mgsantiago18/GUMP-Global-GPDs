@@ -284,7 +284,7 @@ def dsigmaL_dt(y: float, xB: float, t: float, Q: float, meson:int, HTFF: complex
           Eq.(2.8) as in https://arxiv.org/pdf/2409.17231"
     """
 
-    return  ( 4* np.pi**2  *alphaEM * xB ** 2 / ((Q**2 + MassCorr(meson)**2) ** 2)) * (Q/ (Q**2 + MassCorr(meson)**2)) ** 2 * (Real(HTFF* Conjugate(HTFF)) - t/4/ M_p**2 * Real(ETFF* Conjugate(ETFF)))
+    return gevtonb * ( 4* np.pi**2  *alphaEM * xB ** 2 / ((Q**2 + MassCorr(meson)**2) ** 2)) * (Q/ (Q**2 + MassCorr(meson)**2)) ** 2 * (Real(HTFF* Conjugate(HTFF)) - t/4/ M_p**2 * Real(ETFF* Conjugate(ETFF)))
                                          
                                                 
         
@@ -319,5 +319,5 @@ def dsigma_dt(y: float, xB: float, t: float, Q: float, meson:int, HTFF: complex,
           Eq.(2.16) as in https://arxiv.org/pdf/2409.17231"
     """
 
-    return  gevtonb *dsigmaL_dt(y, xB, t, Q, meson, HTFF, ETFF)*(epsilon(y)+1/R(Q,a,p,meson))
+    return  dsigmaL_dt(y, xB, t, Q, meson, HTFF, ETFF)*(epsilon(y)+1/R(Q,a,p,meson))
  
