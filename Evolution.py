@@ -912,7 +912,7 @@ def Charge_Factor(particle:int):
         return np.array([0, -1/6, 0, 5/18, 5/18])
         
     if (particle==1):
-        return f_rho * np.array([0,1,0,1/np.sqrt(2),1/np.sqrt(2)])
+        return f_rho * np.array([0,-1/(6*np.sqrt(2)),0,1/np.sqrt(2),1/np.sqrt(2)])  
     
     if (particle==3):
         return f_jpsi * np.array([0,0,0,2/3,2/3])

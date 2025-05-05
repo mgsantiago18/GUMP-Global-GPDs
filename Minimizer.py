@@ -1,7 +1,7 @@
 from Parameters import ParaManager_Unp, ParaManager_Pol
 from Observables import GPDobserv
 from DVCS_xsec import dsigma_TOT, dsigma_DVCS_HERA, M
-from DVMP_xsec import dsigma_dt, M_jpsi
+from DVMP_xsec import dsigma_dt,dsigmaL_dt, M_jpsi,epsilon, R, val_a, val_p, stan_dev_R_rho
 from multiprocessing import Pool
 from functools import partial
 from iminuit import Minuit
@@ -71,7 +71,19 @@ DVCSxsec_HERA_group_data = list(map(lambda set: DVCSxsec_HERA_data[(DVCSxsec_HER
 
 
 
-# rho and phi data from HERA, R = sigma_L / sigma_T is currently handled on the theory side for these
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 DVrhoPZEUSxsec_data = pd.read_csv(os.path.join(dir_path,'GUMPDATA/DVMP_HERA/DVrhoPZEUSdt.csv'), header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
 DVrhoPZEUSxsec_data['Q'] = np.sqrt(DVrhoPZEUSxsec_data['Q'])
@@ -86,6 +98,104 @@ DVrhoPH1xsec_data['t'] = -1 * DVrhoPH1xsec_data['t']
 DVrhoPH1xsec_data = DVrhoPH1xsec_data[(DVrhoPH1xsec_data['Q']>Q_threshold)]
 xBtQlst_rhoH = DVrhoPH1xsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
 DVrhoPH1xsec_group_data = list(map(lambda set: DVrhoPH1xsec_data[(DVrhoPH1xsec_data['xB'] == set[0]) & (DVrhoPH1xsec_data['t'] == set[1]) & ((DVrhoPH1xsec_data['Q'] == set[2]))], xBtQlst_rhoH))
+
+
+
+
+
+# ---------------------------------------------------
+# 1) Computing the propagated uncertainty on dσ_L/dt= (dσ_tot/dt) / (ε + 1/R)
+#    for the H1 data set for rho production
+# ---------------------------------------------------
+
+def stan_dev_dsigmaL_dt_H1(y:float,Q:float,val_a:float,val_p:float,meson=1): 
+    """ Error propagation for dσ_L(y,Q,a,p,meson) /dt= (dσ_tot /dt) / (ε(y) + 1/R(Q;a,p,meson)).
+
+    Args:
+       y (float): Beam energy lost parameter
+       Q (float): Photon virtuality
+       val_a: The fitted “a” parameter in the R(Q) parametrization
+       val_p: The fitted “p” parameter in the R(Q) parametrization
+       meson: 1 for rho production
+     
+
+    Returns:
+        The standart deviation of  dσ_L(y,Q,a,p,meson) / dt
+    """
+
+     # ∂(dσ_L/dt)/∂(dσ_tot/dt) = 1 / (ε + 1/R)
+    partial_derivative_dsigma_dt =1/ (epsilon(y) + 1 / R(Q, val_a, val_p,meson=1))
+    
+    # ∂(dσ_L/dt)/∂R = (dσ_tot/dt) / (R²(ε + 1/R)²)
+    # Here dσ_tot/dt is stored in DVrhoPH1xsec_data['f']:
+    partial_derivative_R =  DVrhoPH1xsec_data['f']  /(R(Q, val_a, val_p,meson=1)**2 * (epsilon(y) + 1 / R(Q, val_a, val_p,meson=1))**2)  
+   
+   
+    #Forming each piece of the variance: 
+    part_sigma_dt = partial_derivative_dsigma_dt**2  * DVrhoPH1xsec_data['delta f']**2
+    part_R = partial_derivative_R**2 * stan_dev_R_rho(Q, val_a , val_p)**2
+    variance_dsigmaL_dt=part_sigma_dt + part_R  # Here we assume σ_tot and R independent, so their corelation=0
+    #print(variance_dsigmaL_dt )
+    return np.sqrt(variance_dsigmaL_dt)
+
+
+# ---------------------------------------------------
+# 2) Loading and preparing the H1 longitudinal cross-section data
+# ---------------------------------------------------
+
+
+
+
+DVrhoPH1_Lxsec_data = pd.read_csv(os.path.join(dir_path,'GUMPDATA/DVMP_HERA/DVrhoPH1dt.csv'), header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
+DVrhoPH1_Lxsec_data['Q'] = np.sqrt(DVrhoPH1_Lxsec_data['Q'])
+DVrhoPH1_Lxsec_data['t'] = -1 * DVrhoPH1_Lxsec_data['t']
+# Recomputing dσ_L/dt from dσ_tot/dt (column 'f') via dσ_L/dt = (dσ_tot/dt)/(ε+1/R)
+DVrhoPH1_Lxsec_data['f'] =  DVrhoPH1xsec_data['f']/(epsilon(DVrhoPH1_Lxsec_data['y'])+1/R(DVrhoPH1_Lxsec_data['Q'],val_a ,val_p,meson=1 )) 
+# Propagating its error using the function above
+DVrhoPH1_Lxsec_data['delta f'] = stan_dev_dsigmaL_dt_H1(DVrhoPH1_Lxsec_data['y'],DVrhoPH1_Lxsec_data['Q'],val_a ,val_p,meson=1)
+DVrhoPH1_Lxsec_data = DVrhoPH1_Lxsec_data[(DVrhoPH1_Lxsec_data['Q']>Q_threshold)]
+xBtQlst_rhoH_L = DVrhoPH1_Lxsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
+DVrhoPH1_Lxsec_group_data = list(map(lambda set: DVrhoPH1_Lxsec_data[(DVrhoPH1_Lxsec_data['xB'] == set[0]) & (DVrhoPH1_Lxsec_data['t'] == set[1]) & ((DVrhoPH1_Lxsec_data['Q'] == set[2]))], xBtQlst_rhoH_L))
+
+
+# ---------------------------------------------------
+# 3) Repeating exactly the same for the ZEUS data set
+# ---------------------------------------------------
+
+
+def stan_dev_dsigmaL_dt_ZEUS(y:float,Q:float,val_a,val_p,meson=1): 
+    
+    partial_derivative_dsigma_dt =1/ (epsilon(y) + 1 / R(Q, val_a, val_p,meson=1))
+    partial_derivative_R =  DVrhoPZEUSxsec_data['f']  /(R(Q, val_a, val_p,meson=1)**2 * (epsilon(y) + 1 / R(Q, val_a, val_p,meson=1))**2)  
+   
+   
+    part_sigma_dt = partial_derivative_dsigma_dt**2  * DVrhoPZEUSxsec_data['delta f']**2
+    part_R = partial_derivative_R**2 * stan_dev_R_rho(Q, val_a , val_p)**2
+    variance_dsigmaL_dt=part_sigma_dt + part_R
+   # print("func_vars",np.sqrt(variance_dsigmaL_dt ))
+    return np.sqrt(variance_dsigmaL_dt)
+
+
+
+
+
+
+DVrhoPZEUS_Lxsec_data = pd.read_csv(os.path.join(dir_path,'GUMPDATA/DVMP_HERA/DVrhoPZEUSdt.csv'), header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
+DVrhoPZEUS_Lxsec_data['Q'] = np.sqrt(DVrhoPZEUS_Lxsec_data['Q'])
+DVrhoPZEUS_Lxsec_data['t'] = -1 * DVrhoPZEUS_Lxsec_data['t']
+DVrhoPZEUS_Lxsec_data['f'] =  DVrhoPZEUSxsec_data['f']/(epsilon(DVrhoPZEUS_Lxsec_data['y'])+1/R(DVrhoPZEUS_Lxsec_data['Q'],val_a,val_p,meson=1 )) 
+DVrhoPZEUS_Lxsec_data['delta f'] = stan_dev_dsigmaL_dt_ZEUS(DVrhoPZEUS_Lxsec_data['y'],DVrhoPZEUS_Lxsec_data['Q'],val_a ,val_p,meson=1)
+DVrhoPZEUS_Lxsec_data = DVrhoPZEUS_Lxsec_data[(DVrhoPZEUS_Lxsec_data['Q']>Q_threshold)]
+xBtQlst_rhoZ_L = DVrhoPZEUS_Lxsec_data.drop_duplicates(subset = ['xB', 't', 'Q'], keep = 'first')[['xB','t','Q']].values.tolist()
+DVrhoPZEUS_Lxsec_group_data = list(map(lambda set: DVrhoPZEUS_Lxsec_data[(DVrhoPZEUS_Lxsec_data['xB'] == set[0]) & (DVrhoPZEUS_Lxsec_data['t'] == set[1]) & ((DVrhoPZEUS_Lxsec_data['Q'] == set[2]))], xBtQlst_rhoZ_L))
+
+
+
+
+
+
+
+
 
 DVphiPZEUSxsec_data = pd.read_csv(os.path.join(dir_path,'GUMPDATA/DVMP_HERA/DVphiPZEUSdt.csv'), header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
 DVphiPZEUSxsec_data['Q'] = np.sqrt(DVphiPZEUSxsec_data['Q'])
@@ -277,14 +387,19 @@ def TFF_theo(xB, t, Q, Para_Unp, meson:int, p_order = 2, muset = 1, flv = 'All')
 
     return  [ HTFF, ETFF]
 
-def DVMPxsec_theo(DVMPxsec_input: pd.DataFrame, TFF_input: np.array, meson:int):
+
+def DVMPxsec_theo(DVMPxsec_input: pd.DataFrame,  TFF_input: np.array, meson:int):
     y = DVMPxsec_input['y'].to_numpy()
     xB = DVMPxsec_input['xB'].to_numpy()
     t = DVMPxsec_input['t'].to_numpy()
     Q = DVMPxsec_input['Q'].to_numpy()    
     [HTFF, ETFF] = TFF_input
+    
+    if (meson==3):
+      return dsigma_dt(y, xB, t, Q, meson, HTFF, ETFF,a,p)
 
-    return dsigma_dt(y, xB, t, Q, meson, HTFF, ETFF)
+    if (meson==1):
+      return dsigmaL_dt(y, xB, t, Q, meson, HTFF, ETFF)
 
 def DVMPxsec_cost_xBtQ(DVMPxsec_data_xBtQ: pd.DataFrame, Para_Unp, xsec_norm, meson:int, p_order = 2):
 
@@ -1137,10 +1252,18 @@ def cost_dvmp(Norm_HuV,    alpha_HuV,    beta_HuV,    alphap_HuV,
     PDF_H_g_smallx_pred = PDF_theo(PDFg_smallx_data, Para=Para_Unp_all, p_order = 2)
     cost_PDF_H_g_smallx = np.sum(((PDF_H_g_smallx_pred - PDFg_smallx_data['f'])/ PDFg_smallx_data['delta f']) ** 2 )
 
-    cost_DVjpsiPH1_xBtQ = np.array(list(pool.map(partial(DVMPxsec_cost_xBtQ, Para_Unp = Para_Unp_all, xsec_norm = jpsinorm, meson = 3, p_order = 2), DVJpsiPH1xsec_group_data)))
-    cost_DVjpsiPH1xsec = np.sum(cost_DVjpsiPH1_xBtQ)
+    #cost_DVjpsiPH1_xBtQ = np.array(list(pool.map(partial(DVMPxsec_cost_xBtQ, Para_Unp = Para_Unp_all, xsec_norm = jpsinorm, meson = 3, p_order = 2), DVJpsiPH1xsec_group_data)))
+    #cost_DVjpsiPH1xsec = np.sum(cost_DVjpsiPH1_xBtQ)
+    
+    
+    cost_DVrhoPH1_xBtQ = np.array(list(pool.map(partial(DVMPxsec_cost_xBtQ, Para_Unp = Para_Unp_all, xsec_norm = 1, meson = 1, p_order = 2), DVrhoPH1_Lxsec_group_data)))
+    cost_DVrhoPZEUS_xBtQ = np.array(list(pool.map(partial(DVMPxsec_cost_xBtQ, Para_Unp = Para_Unp_all, xsec_norm = 1, meson = 1, p_order = 2), DVrhoPZEUS_Lxsec_group_data)))
+   
+    cost_DVrhoPH1_Lxsec = np.sum(cost_DVrhoPH1_xBtQ)
+    cost_DVrhoPZEUS_Lxsec = np.sum(cost_DVrhoPZEUS_xBtQ)
+    
 
-    return cost_PDF_H_g_smallx + cost_DVjpsiPH1xsec #+ cost_DVjpsiPZEUSxsec
+    return cost_PDF_H_g_smallx + cost_DVrhoPH1_Lxsec + cost_DVrhoPZEUS_Lxsec
 
 def dvmp_fit(Paralst_Unp):
 
@@ -1177,8 +1300,8 @@ def dvmp_fit(Paralst_Unp):
     fit_dvmp.fixed['Invm2_Hg'] = True
     fit_dvmp.limits['bexp_Hg']  = (0.1,4)
     
-    fit_dvmp.limits['norm'] = (0.1,10)
-    #fit_dvmp.fixed['norm'] = True
+    #fit_dvmp.limits['norm'] = (0.1,10)
+    fit_dvmp.fixed['norm'] = True
     
     #fit_dvmp.limits['norm2'] = (0.1,10)
     fit_dvmp.fixed['norm2'] = True
@@ -1229,17 +1352,25 @@ def dvmp_fit(Paralst_Unp):
     #fit_dvmp.fixed['alphap_Hg'] = True
     fit_dvmp.limits['alphap_Hg'] = (0,0.5)
     
-    #fit_dvmp.limits['R_E_Sea']=(0,10)    
-
-    #fit_dvmp.limits['R_Hg_xi2'] = (-20,20)
-
-    fit_dvmp.fixed['R_E_Sea'] = True    
+    
+    fit_dvmp.limits['R_Hg_xi2'] = (-1,1)
+    fit_dvmp.limits['R_Hg_xi4'] = (-1,1)
+    #fit_dvmp.limits['R_Hu_xi2'] = (-1,1)
+    #fit_dvmp.limits['R_Hu_xi4'] = (-1,1)
+    #fit_dvmp.limits['R_Hd_xi2'] = (-1,1)
+    #fit_dvmp.limits['R_Hd_xi4'] = (-1,1)
+    
+    fit_dvmp.fixed['R_E_Sea']= True 
     fit_dvmp.fixed['R_Hu_xi2'] = True
-    fit_dvmp.fixed['R_Hd_xi2'] = True     
-   # fit_dvmp.fixed['R_Hg_xi2'] = True
-    fit_dvmp.fixed['R_Eu_xi2'] = True
+    fit_dvmp.fixed['R_Hd_xi2'] = True 
+    
+    #fit_dvmp.limits['R_Hg_xi2'] = True
+    fit_dvmp.fixed['R_Eu_xi2'] = True 
     fit_dvmp.fixed['R_Ed_xi2'] = True 
     fit_dvmp.fixed['R_Eg_xi2'] = True
+  # fit_dvmp.fixed['R_Hg_xi2'] = True
+
+
     
 
     #fit_dvmp.fixed['R_Hg_xi4'] = True
@@ -1261,7 +1392,7 @@ def dvmp_fit(Paralst_Unp):
     fit_dvmp.migrad()
     fit_dvmp.hesse()
 
-    ndof_dvmp = len(DVJpsiPH1xsec_data) + len(PDFg_smallx_data) - fit_dvmp.nfit 
+    ndof_dvmp = len(DVrhoPZEUS_Lxsec_data)+len(DVrhoPH1_Lxsec_data) + len(PDFg_smallx_data) - fit_dvmp.nfit 
 
     time_end = time.time() -time_start
 
