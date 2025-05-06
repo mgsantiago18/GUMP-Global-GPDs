@@ -56,7 +56,7 @@ def ParaManager_Unp(Paralst: np.array):
     #R_Ed_xi4 = 0
     # Ansatz_Place_Holder here is used such that it doesn't contribute to the moments, but serve a place holder 
     # To activate the second (or more) ansatz but only for gluons, we use place holder to keep the shape regular.
-    Ansatz_Place_Holder = [0,1,1,0,0,0]
+    Ansatz_Place_Holder = [0,0,1,0,0,0]
     # Initial forward parameters for the H of (uV, ubar, dV, dbar,g) distributions
     H_uV =   np.array([[Norm_HuV,   alpha_HuV,   beta_HuV,   alphap_HuV,   0,         0], Ansatz_Place_Holder])
     H_ubar = np.array([[Norm_Hubar, alpha_Hubar, beta_Hubar, alphap_Hqbar, bexp_HSea, 0], Ansatz_Place_Holder])
@@ -159,7 +159,7 @@ def ParaManager_Pol(Paralst: np.array):
     
     # Ansatz_Place_Holder here is used such that it doesn't contribute to the moments, but serve a place holder 
     # To activate the second (or more) ansatz but only for gluons, we use place holder to keep the shape regular.
-    Ansatz_Place_Holder = [0,1,1,0,0,0]
+    Ansatz_Place_Holder = [0,0,1,0,0,0]
     # Initial forward parameters for the Ht of (uV, ubar, dV, dbar,g) distributions
 
     Ht_uV =   np.array([[Norm_HtuV,   alpha_HtuV,   beta_HtuV,   alphap_HtuV,   0,          0], Ansatz_Place_Holder])
@@ -273,7 +273,6 @@ def ConfMoment(j: complex, t: float, ParaSets: np.ndarray):
     j = np.reshape(j, j_new_shape)
 
     # Currently with KM ansatz and dipole residual
-
     return norm * beta_loggamma (j + 1 - alpha, 1 + beta) * (j + 1  - alpha)/ (j + 1 - alpha - alphap * t) * np.exp(t*bexp) * (1 - t * invm2 ) ** (-3)
     # (N) or (N, m1) or (N, m1, m2) .... depends on usage
     # For the recommended usage, the output is (N, 5, init_NumofAnsatz)

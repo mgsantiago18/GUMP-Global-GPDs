@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 from iminuit import Minuit
+from functools import cache
 
 from numpy import cos as Cos
 from numpy import sin as Sin
@@ -108,6 +109,7 @@ def R_rho_cost(a, p):
     return chi2 / ndof
 
 #Using iminuit to minimize the cost function and extract best–fit values:
+@cache
 def R_rho_fit():
 
     m = Minuit(R_rho_cost, a=2.5, p=0.7) # initial guesses.

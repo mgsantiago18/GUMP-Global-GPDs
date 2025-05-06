@@ -5,8 +5,6 @@ from DVMP_xsec import dsigma_DVMP_dt,dsigmaL_DVMP_dt, M_jpsi,epsilon, R_fitted
 from multiprocessing import Pool
 from functools import partial
 from iminuit import Minuit
-# Do not need tPDF_Moment_Evo_NLO generally, but we import it here to manually control the cache and save RAM.
-from Evolution import tPDF_Moment_Evo_NLO
 import numpy as np
 import pandas as pd
 import time
@@ -14,15 +12,10 @@ import csv
 import os
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-
 Minuit_Counter = 0
-
 Time_Counter = 1
-
 Q_threshold = 1.9
-
 xB_Cut = 0.5
-
 xB_small_Cut = 0.0001
 
 """
@@ -229,12 +222,6 @@ def PDF_theo_scalar_helper(args):
     _PDF_theo = GPDobserv(x_i, xi_i, t_i, Q_i, p_i)  
     return _PDF_theo.tPDF(flv_i, Para_i, p_order)
 
-# Helper function for scalar computation
-def GFF_theo_scalar_helper(args):
-    j_i, x, xi, t_i, Q_i, p_i, flv_i, Para_i, p_order = args
-    _GFF_theo = GPDobserv(x, xi, t_i, Q_i, p_i)  # Assume GPDobserv is defined elsewhere
-    return _GFF_theo.GFFj0(j_i, flv_i, Para_i, p_order)
-
 def PDF_theo(PDF_input: pd.DataFrame, Para: np.array, p_order = 2):
     xs = PDF_input['x'].to_numpy()
     ts = PDF_input['t'].to_numpy()
@@ -258,6 +245,13 @@ def PDF_theo(PDF_input: pd.DataFrame, Para: np.array, p_order = 2):
     return np.array(result)
 
 tPDF_theo = PDF_theo
+
+# Helper function for scalar computation
+def GFF_theo_scalar_helper(args):
+
+    j_i, x, xi, t_i, Q_i, p_i, flv_i, Para_i, p_order = args
+    _GFF_theo = GPDobserv(x, xi, t_i, Q_i, p_i)
+    return _GFF_theo.GFFj0(j_i, flv_i, Para_i, p_order)
 
 def GFF_theo(GFF_input: pd.DataFrame, Para: np.array, p_order = 2):
     
@@ -349,7 +343,6 @@ def TFF_theo(xB, t, Q, Para_Unp, meson:int, p_order = 2, muset = 1, flv = 'All')
     ETFF = H_E.TFF(Para_Unp[..., 1, :, :, :, :], muset * Q, meson, p_order, flv)
 
     return  [ HTFF, ETFF]
-
 
 def DVMPxsec_theo(DVMPxsec_input: pd.DataFrame,  TFF_input: np.array, meson:int):
     y = DVMPxsec_input['y'].to_numpy()
@@ -1007,8 +1000,6 @@ def cost_off_forward(Norm_HuV,    alpha_HuV,    beta_HuV,    alphap_HuV,
 
     return  cost_DVCSxsec + cost_DVCSxsec_HERA
 
-
-
 def off_forward_fit(Paralst_Unp, Paralst_Pol):
 
     [Norm_HuV_Init,    alpha_HuV_Init,    beta_HuV_Init,    alphap_HuV_Init, 
@@ -1382,16 +1373,20 @@ def dvmp_fit(Paralst_Unp):
 if __name__ == '__main__':
     pool = Pool()
     time_start = time.time()
-    '''
-    Paralst_Unp     = [4.922551238,0.21635596,3.228702555,2.349193947,0.163440601,1.135738688,6.896742038,0.15,3.358541913,0.184196049,4.41726899,3.475742056,0.249183402,1.051922382,6.548676693,2.864281106,1.052305853,7.412779844,0.15,0.161159704,0.916012032,1.02239598,0.41423421,-0.198595321,0.0,0.18394307,-2.260952723,0,1.159322377,2.569800357,0,0,0,0,0,0,0,3.296968216,0,0]
-    Paralst_Pol     = [4.529773253,-0.246812532,3.037043159,2.607360484,0.076575866,0.516192897,4.369657188,0.15,-0.711694724,0.210181857,3.243538578,4.319727451,-0.057100694,0.612255908,2.099180441,0.243247279,0.630824175,2.71840147,0.15,9.065736349,0.79999977,7.357005187,2.083472023,-3.562901039,0.0,-0.634095327,-7.058667382,0,2.861662204,23.1231347,0,0,0,0,0,0,0,5.379752095]
-   
+
+    Paralst_Unp_Ext=pd.read_csv(os.path.join(dir_path,'GUMP_Params/Para_Unp.csv'), header=None).to_numpy()[0]
+    Paralst_Pol=pd.read_csv(os.path.join(dir_path,'GUMP_Params/Para_Pol.csv'), header=None).to_numpy()[0]
+    
+    norm1 = Paralst_Unp_Ext[-2]
+    norm2 = Paralst_Unp_Ext[-1]
+    Paralst_Unp = Paralst_Unp_Ext[:-2]
+    
     Para_Unp = ParaManager_Unp(Paralst_Unp)
     Para_Pol = ParaManager_Pol(Paralst_Pol)
     
     fit_forward_H   = forward_H_fit(Paralst_Unp)
     Paralst_Unp     = np.array(fit_forward_H.values)
-
+    
     fit_forward_Ht  = forward_Ht_fit(Paralst_Pol)
     Paralst_Pol     = np.array(fit_forward_Ht.values)
 
@@ -1401,11 +1396,8 @@ if __name__ == '__main__':
     fit_forward_Et  = forward_Et_fit(Paralst_Pol)
     Paralst_Pol     = np.array(fit_forward_Et.values)
     
+    Paralst_Unp_Ext2 = np.concatenate((Paralst_Unp, np.array([norm1,norm2])))
     fit_off_forward = off_forward_fit(Paralst_Unp, Paralst_Pol)
-    '''
+    fit_dvmp = dvmp_fit(Paralst_Unp_Ext2)
 
-    Paralst_Unp=pd.read_csv(os.path.join(dir_path,'GUMP_Params/Para_Unp.csv'), header=None).to_numpy()[0]
-    Paralst_Pol=pd.read_csv(os.path.join(dir_path,'GUMP_Params/Para_Pol.csv'), header=None).to_numpy()[0]
-
-    fit_dvmp = dvmp_fit(Paralst_Unp)
 
