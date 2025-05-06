@@ -1,7 +1,7 @@
 from Parameters import ParaManager_Unp, ParaManager_Pol
 from Observables import GPDobserv
-from DVCS_xsec import dsigma_TOT, dsigma_DVCS_HERA, M
-from DVMP_xsec import dsigma_dt,dsigmaL_dt, M_jpsi,epsilon, R_fitted
+from DVCS_xsec import dsigma_DVCS_TOT, dsigma_DVCS_HERA, M
+from DVMP_xsec import dsigma_DVMP_dt,dsigmaL_DVMP_dt, M_jpsi,epsilon, R_fitted
 from multiprocessing import Pool
 from functools import partial
 from iminuit import Minuit
@@ -113,10 +113,10 @@ def DVMP_L_Error_Prop(DVMP_tot_xsec: pd.DataFrame, meson: int =1):
     part_sigma_dt = partial_derivative_dsigma_dt**2  * tot_xsec_err ** 2
     part_R = partial_derivative_R**2 * R_err ** 2
     
-    dsigmaL_dt = tot_xsec / (epsilon(y_vals) + 1 / R_Mean)
+    dsigmaL_xsec_dt = tot_xsec / (epsilon(y_vals) + 1 / R_Mean)
     variance_dsigmaL_dt=part_sigma_dt + part_R  # Here we assume σ_tot and R independent, so their corelation=0
 
-    return dsigmaL_dt, np.sqrt(variance_dsigmaL_dt)
+    return dsigmaL_xsec_dt, np.sqrt(variance_dsigmaL_dt)
 
 DVrhoPZEUSxsec_data = pd.read_csv(os.path.join(dir_path,'GUMPDATA/DVMP_HERA/DVrhoPZEUSdt.csv'), header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
 DVrhoPZEUSxsec_data['Q'] = np.sqrt(DVrhoPZEUSxsec_data['Q'])
@@ -127,9 +127,9 @@ DVrhoPZEUSxsec_group_data = list(map(lambda set: DVrhoPZEUSxsec_data[(DVrhoPZEUS
 
 # Converting to longitudinal cross-sections
 DVrhoPZEUSxsecL_data = DVrhoPZEUSxsec_data.copy()
-dsigmaL_dt, dsigmaL_dt_err = DVMP_L_Error_Prop(DVrhoPZEUSxsecL_data, 1)
-DVrhoPZEUSxsecL_data['f'] = dsigmaL_dt
-DVrhoPZEUSxsecL_data['delta f'] = dsigmaL_dt_err
+dsigmaL_dt_ZEUS, dsigmaL_dt_err_ZEUS = DVMP_L_Error_Prop(DVrhoPZEUSxsecL_data, 1)
+DVrhoPZEUSxsecL_data['f'] = dsigmaL_dt_ZEUS
+DVrhoPZEUSxsecL_data['delta f'] = dsigmaL_dt_err_ZEUS
 DVrhoPZEUSxsecL_group_data = list(map(lambda set: DVrhoPZEUSxsecL_data[(DVrhoPZEUSxsecL_data['xB'] == set[0]) & (DVrhoPZEUSxsecL_data['t'] == set[1]) & ((DVrhoPZEUSxsecL_data['Q'] == set[2]))], xBtQlst_rhoZ))
 
 DVrhoPH1xsec_data = pd.read_csv(os.path.join(dir_path,'GUMPDATA/DVMP_HERA/DVrhoPH1dt.csv'), header = None, names = ['y', 'xB', 't', 'Q', 'f', 'delta f'] , dtype = {'y': float, 'xB': float, 't': float, 'Q': float, 'f': float, 'delta f': float})
@@ -141,9 +141,9 @@ DVrhoPH1xsec_group_data = list(map(lambda set: DVrhoPH1xsec_data[(DVrhoPH1xsec_d
 
 # Converting to longitudinal cross-sections
 DVrhoPH1xsecL_data = DVrhoPH1xsec_data.copy()
-dsigmaL_dt, dsigmaL_dt_err = DVMP_L_Error_Prop(DVrhoPH1xsecL_data, 1)
-DVrhoPH1xsecL_data['f'] = dsigmaL_dt
-DVrhoPH1xsecL_data['delta f'] = dsigmaL_dt_err
+dsigmaL_dt_H1, dsigmaL_dt_err_H1 = DVMP_L_Error_Prop(DVrhoPH1xsecL_data, 1)
+DVrhoPH1xsecL_data['f'] = dsigmaL_dt_H1
+DVrhoPH1xsecL_data['delta f'] = dsigmaL_dt_err_H1
 DVrhoPH1xsecL_group_data = list(map(lambda set: DVrhoPH1xsecL_data[(DVrhoPH1xsecL_data['xB'] == set[0]) & (DVrhoPH1xsecL_data['t'] == set[1]) & ((DVrhoPH1xsecL_data['Q'] == set[2]))], xBtQlst_rhoH))
 
 """
@@ -310,7 +310,7 @@ def DVCSxsec_theo(DVCSxsec_input: pd.DataFrame, CFF_input: np.array):
     pol = DVCSxsec_input['pol'].to_numpy()
 
     [HCFF, ECFF, HtCFF, EtCFF] = CFF_input # each of them have shape (N); scalar is also OK if we use 
-    return dsigma_TOT(y, xB, t, Q, phi, pol, HCFF, ECFF, HtCFF, EtCFF)
+    return dsigma_DVCS_TOT(y, xB, t, Q, phi, pol, HCFF, ECFF, HtCFF, EtCFF)
 
 def DVCSxsec_cost_xBtQ(DVCSxsec_data_xBtQ: pd.DataFrame, Para_Unp, Para_Pol):
     [xB, t, Q] = [DVCSxsec_data_xBtQ['xB'].iat[0], DVCSxsec_data_xBtQ['t'].iat[0], DVCSxsec_data_xBtQ['Q'].iat[0]] 
@@ -360,16 +360,16 @@ def DVMPxsec_theo(DVMPxsec_input: pd.DataFrame,  TFF_input: np.array, meson:int)
     
     if (meson==3):
         # a and p are the parameters for R which are not need for J/psi, put int 0 for both of them as placeholder.
-        return dsigma_dt(y, xB, t, Q, meson, HTFF, ETFF,0,0)
+        return dsigma_DVMP_dt(y, xB, t, Q, meson, HTFF, ETFF,0,0)
 
     if (meson==1):
-        return dsigmaL_dt(y, xB, t, Q, meson, HTFF, ETFF)
+        return dsigmaL_DVMP_dt(y, xB, t, Q, meson, HTFF, ETFF)
 
 def DVMPxsec_cost_xBtQ(DVMPxsec_data_xBtQ: pd.DataFrame, Para_Unp, xsec_norm, meson:int, p_order = 2):
 
     [xB, t, Q] = [DVMPxsec_data_xBtQ['xB'].iat[0], DVMPxsec_data_xBtQ['t'].iat[0], DVMPxsec_data_xBtQ['Q'].iat[0]] 
     [HTFF, ETFF] = TFF_theo(xB, t, Q, Para_Unp, meson, p_order, muset = 1)
-    DVMP_pred_xBtQ = DVMPxsec_theo(DVMPxsec_data_xBtQ, TFF_input = [HTFF, ETFF], meson = meson) * xsec_norm**2
+    DVMP_pred_xBtQ = DVMPxsec_theo(DVMPxsec_data_xBtQ, [HTFF, ETFF], meson) * xsec_norm**2
     return np.sum(((DVMP_pred_xBtQ - DVMPxsec_data_xBtQ['f'])/ DVMPxsec_data_xBtQ['delta f']) ** 2 )
 
 def cost_forward_H(Norm_HuV,    alpha_HuV,    beta_HuV,    alphap_HuV, 

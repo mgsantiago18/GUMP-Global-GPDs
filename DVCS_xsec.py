@@ -545,7 +545,7 @@ def F2_FF(t):
 # I had to change the order of the functions to make numba work
 
 # The total cross-section is given by the sum of Bethe-Heitler (BH), pure DVCS and interference (INT) contributions
-def dsigma_TOT(y: float, xB: float, t: float, Q: float, phi: float, pol, HCFF: complex, ECFF: complex, HtCFF: complex, EtCFF: complex):
+def dsigma_DVCS_TOT(y: float, xB: float, t: float, Q: float, phi: float, pol, HCFF: complex, ECFF: complex, HtCFF: complex, EtCFF: complex):
     """ Combining the BH, Pure DVCS and interfernce cross-sections
 
     Args:

@@ -215,7 +215,7 @@ def MassCorr(meson:int):
 # -----------------------------------------------------------------------------
 
 @np.vectorize
-def dsigmaL_dt(y: float, xB: float, t: float, Q: float, meson:int, HTFF: complex, ETFF: complex):
+def dsigmaL_DVMP_dt(y: float, xB: float, t: float, Q: float, meson:int, HTFF: complex, ETFF: complex):
     """Longitudinal DVMP cross section differential only in t
           
       Args:
@@ -241,7 +241,7 @@ def dsigmaL_dt(y: float, xB: float, t: float, Q: float, meson:int, HTFF: complex
 # -----------------------------------------------------------------------------
 
 @np.vectorize
-def dsigma_dt(y: float, xB: float, t: float, Q: float, meson:int, HTFF: complex, ETFF: complex,a:float,p:float):
+def dsigma_DVMP_dt(y: float, xB: float, t: float, Q: float, meson:int, HTFF: complex, ETFF: complex,a:float,p:float):
     """The total DVMP cross section differential only in t
           
       Args:
@@ -260,4 +260,4 @@ def dsigma_dt(y: float, xB: float, t: float, Q: float, meson:int, HTFF: complex,
           Eq.(2.16) as in https://arxiv.org/pdf/2409.17231"
     """
 
-    return  dsigmaL_dt(y, xB, t, Q, meson, HTFF, ETFF)*(epsilon(y)+1/R(Q,a,p,meson))
+    return  dsigmaL_DVMP_dt(y, xB, t, Q, meson, HTFF, ETFF)*(epsilon(y)+1/R(Q,a,p,meson))
