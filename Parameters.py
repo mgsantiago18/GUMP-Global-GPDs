@@ -40,9 +40,12 @@ def ParaManager_Unp(Paralst: np.array):
 
     [Norm_HuV,    alpha_HuV,    beta_HuV,    alphap_HuV, 
      Norm_Hubar,  alpha_Hubar,  beta_Hubar,  alphap_Hqbar,
+     Norm_Hubar_2,  alpha_Hubar_2,  beta_Hubar_2,
      Norm_HdV,    alpha_HdV,    beta_HdV,    alphap_HdV,
      Norm_Hdbar,  alpha_Hdbar,  beta_Hdbar, 
+     Norm_Hdbar_2,  alpha_Hdbar_2,  beta_Hdbar_2,
      Norm_Hg,     alpha_Hg,     beta_Hg,     alphap_Hg,
+     Norm_Hg_2,     alpha_Hg_2,     beta_Hg_2,
      Norm_EuV,    alpha_EuV,    beta_EuV,    alphap_EuV,
      Norm_EdV,    R_E_Sea,      R_Hu_xi2,    R_Hd_xi2,    R_Hg_xi2,
      R_Eu_xi2,    R_Ed_xi2,     R_Eg_xi2,
@@ -59,10 +62,10 @@ def ParaManager_Unp(Paralst: np.array):
     Ansatz_Place_Holder = [0,0,1,0,0,0]
     # Initial forward parameters for the H of (uV, ubar, dV, dbar,g) distributions
     H_uV =   np.array([[Norm_HuV,   alpha_HuV,   beta_HuV,   alphap_HuV,   0,         0], Ansatz_Place_Holder])
-    H_ubar = np.array([[Norm_Hubar, alpha_Hubar, beta_Hubar, alphap_Hqbar, bexp_HSea, 0], Ansatz_Place_Holder])
+    H_ubar = np.array([[Norm_Hubar, alpha_Hubar, beta_Hubar, alphap_Hqbar, bexp_HSea, 0], [Norm_Hubar_2, alpha_Hubar_2, beta_Hubar_2, alphap_Hqbar, bexp_HSea, 0]])
     H_dV =   np.array([[Norm_HdV,   alpha_HdV,   beta_HdV,   alphap_HdV,   0,         0], Ansatz_Place_Holder])
-    H_dbar = np.array([[Norm_Hdbar, alpha_Hdbar, beta_Hdbar, alphap_Hqbar, bexp_HSea, 0], Ansatz_Place_Holder])
-    H_g =    np.array([[Norm_Hg,    alpha_Hg,    beta_Hg,    alphap_Hg,    bexp_Hg,   Invm2_Hg], Ansatz_Place_Holder])
+    H_dbar = np.array([[Norm_Hdbar, alpha_Hdbar, beta_Hdbar, alphap_Hqbar, bexp_HSea, 0], [Norm_Hdbar_2, alpha_Hdbar_2, beta_Hdbar_2, alphap_Hqbar, bexp_HSea, 0]])
+    H_g =    np.array([[Norm_Hg,    alpha_Hg,    beta_Hg,    alphap_Hg,    bexp_Hg,   Invm2_Hg], [Norm_Hg_2,    alpha_Hg_2,    beta_Hg_2,    alphap_Hg,    bexp_Hg,   Invm2_Hg]])
 
     # Initial xi^2 parameters for the H of (uV, ubar, dV, dbar,g) distributions
     """
